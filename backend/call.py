@@ -123,7 +123,8 @@ class Call:
                 if token:
                     self.provider.upgrade(session, token)
                     emit("approval_resolved", status="approved", scopes=sorted(session.scopes))
-                    personal.notice("Abdul approved on his phone. Your new permission token has been presented to Northwind.")
+                    personal.notice("Abdul approved on his phone. Your new permission token has been presented to Northwind. "
+                                    "Tell Northwind he just approved it.")
                     business.notice(f"The owner approved on their device. Verified new delegation token. Permissions now: "
                                     f"{', '.join(sorted(session.scopes))}, for this exact change only.")
                 else:
