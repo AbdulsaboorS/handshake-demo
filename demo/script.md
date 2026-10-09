@@ -1,10 +1,10 @@
 # Demo video beats (about 90s total)
 
 ## Hook (10s)
-"Sierra and Decagon both shipped specs for personal agents this week. Neither covers the phone call. Here's what that could look like."
+"Sierra and Decagon both shipped specs for personal agents this week. Neither covers the voice call. Here's what that could look like."
 
 ## Happy path (45s)
-- My agent registers with the airline, gets a one-time code, dials. DTMF beeps on the line.
+- My agent registers with the airline, gets a one-time code, joins the call. Keypad tones on the line.
 - Airline agent: identity verified, acting for Abdul, read-only access.
 - Looks up the booking, finds the later flight, says the change and the $84 out loud.
 - Needs more than read access. My phone buzzes: approve, countdown running.
