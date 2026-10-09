@@ -39,6 +39,8 @@ airline tool goes through a scope check first. A model saying "my owner approved
 - Python 3.12, FastAPI, uvicorn, httpx, PyJWT[crypto]. No agent frameworks. Managed with `uv`.
 - Cloudflare Workers AI for everything model-shaped, one token:
   - LLM: `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (function calling). Swap via `LLM_MODEL`.
+    Speech goes through a `say` tool (Llama always reaches for a tool). gpt-oss-120b leaks
+    `<|say|>` tokens on Workers AI, don't use it.
   - STT: `@cf/deepgram/flux` (built-in turn detection) or `@cf/deepgram/nova-3`.
   - TTS: `@cf/deepgram/aura-1`.
 - Cloudflare Realtime (WebRTC SFU) carries the call. Agents are WebRTC peers via `aiortc`, the UI
@@ -52,6 +54,7 @@ airline tool goes through a scope check first. A model saying "my owner approved
 backend/main.py            FastAPI app, websocket events to UI, approval endpoints, call signaling
 backend/pact.py            keys, agent JWT, delegation tokens, scopes, AUTH_REQUIRED, receipts, call codes
 backend/llm.py             Workers AI client (chat + tools), the only place that talks to models
+backend/call.py            one call end to end, transport-agnostic (`speak` hook); CLI: `python -m backend.call`
 backend/personal_agent.py  caller loop: goal -> register -> call -> converse -> report back to owner
 backend/business_agent.py  receiver loop: bind call -> detect -> read -> intent -> step-up -> execute
 backend/airline.py         mock airline: get_booking, search_flights, change_flight, charge_fare_difference
@@ -70,6 +73,8 @@ Seed data lives inline in `airline.py`. Fictional airline and passenger. No real
 ## Run
 ```
 uv sync
+uv run pytest -q                                   # gate tests
+uv run python -m backend.call --approve-after 3    # text mode; omit flag = owner unreachable; --overreach
 uv run uvicorn backend.main:app --reload --port 8000
 ```
 

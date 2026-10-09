@@ -5,7 +5,7 @@ to a booking change that skips the gate.
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from backend.pact import CallerSession
@@ -114,9 +114,9 @@ def get_booking(session: CallerSession, pnr: str) -> dict:
     return {"pnr": b.pnr, "passenger": b.passenger, "segments": [_flight_view(s) for s in b.segments]}
 
 
-def search_flights(session: CallerSession, origin: str, destination: str, on: str) -> list[dict]:
+def search_flights(session: CallerSession, origin: str, destination: str, date: str) -> list[dict]:
     session.require("bookings:read")
-    day = date.fromisoformat(on)
+    day = datetime.fromisoformat(date).date()
     return [_flight_view(f) for f in SCHEDULE
             if (f.origin, f.destination) == (origin.upper(), destination.upper()) and f.departs.date() == day]
 
