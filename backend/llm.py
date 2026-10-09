@@ -34,7 +34,7 @@ def tool(name: str, description: str, **params: str) -> dict:
 
 
 async def chat(messages: list[dict], tools: list[dict] | None = None) -> dict:
-    body = {"model": os.environ["LLM_MODEL"], "messages": messages, "temperature": 0.3}
+    body = {"model": os.environ["LLM_MODEL"], "messages": messages, "temperature": 0.1}
     if tools:
         body["tools"] = tools
     r = await _client.post("/chat/completions", json=body)

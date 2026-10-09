@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handshake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #12151c;
+    --panel-2: #181c25;
+    --line: #232836;
+    --text: #e8eaf0;
+    --muted: #8a91a3;
+    --faint: #555c6e;
+    --agent: #a78bfa;
+    --agent-bg: #a78bfa1a;
+    --airline: #38bdf8;
+    --airline-bg: #38bdf81a;
+    --ok: #34d399;
+    --ok-bg: #34d39918;
+    --warn: #fbbf24;
+    --warn-bg: #fbbf2418;
+    --bad: #f87171;
+    --bad-bg: #f8717118;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+    display: grid; grid-template-rows: auto 1fr;
+  }
+
+  header {
+    display: flex; align-items: center; gap: 24px; padding: 18px 28px;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; flex-direction: column; margin-right: auto; }
+  .brand b { font-size: 20px; letter-spacing: -0.01em; }
+  .brand span { color: var(--muted); font-size: 13px; }
+  .seg { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+  .seg button {
+    all: unset; cursor: pointer; padding: 8px 14px; border-radius: 7px; color: var(--muted); font-weight: 500; font-size: 14px;
+  }
+  .seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+  .start {
+    all: unset; cursor: pointer; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px;
+    background: var(--text); color: var(--bg);
+  }
+  .start:disabled { opacity: .4; cursor: default; }
+  .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font: 500 13px var(--mono); min-width: 110px; }
+  .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+  .status.live i { background: var(--bad); animation: pulse 1.4s infinite; }
+  .status.live { color: var(--text); }
+  @keyframes pulse { 50% { opacity: .3; } }
+
+  main { display: grid; grid-template-columns: 1.3fr 1fr; min-height: 0; }
+  section { display: flex; flex-direction: column; min-height: 0; }
+  section + section { border-left: 1px solid var(--line); }
+  .head {
+    display: flex; align-items: center; justify-content: space-between; padding: 16px 28px;
+    color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  }
+  .parties { display: flex; gap: 18px; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 13px; }
+  .parties span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; }
+  .parties .a::before { background: var(--airline); }
+  .parties .p::before { background: var(--agent); }
+
+  #transcript { flex: 1; overflow-y: auto; padding: 8px 28px 28px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+  .empty { margin: auto; color: var(--faint); text-align: center; max-width: 360px; }
+  .msg { max-width: 78%; display: flex; flex-direction: column; gap: 4px; animation: rise .25s ease-out; }
+  .msg .who { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .msg .bubble { padding: 12px 16px; border-radius: 14px; font-size: 16.5px; line-height: 1.5; }
+  .msg.airline { align-self: flex-start; }
+  .msg.airline .bubble { background: var(--airline-bg); border: 1px solid #38bdf833; border-top-left-radius: 4px; }
+  .msg.agent { align-self: flex-end; align-items: flex-end; }
+  .msg.agent .bubble { background: var(--agent-bg); border: 1px solid #a78bfa33; border-top-right-radius: 4px; }
+  .bubble .w { opacity: 0; animation: word .2s forwards; }
+  @keyframes word { to { opacity: 1; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+  .sys {
+    align-self: center; font: 12.5px var(--mono); color: var(--muted); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; animation: rise .25s ease-out;
+  }
+  .sys b { color: var(--text); font-weight: 500; }
+  .sys.ok { color: var(--ok); border-color: #34d39940; }
+  .sys.warn { color: var(--warn); border-color: #fbbf2440; }
+  .sys.bad { color: var(--bad); border-color: #f8717140; }
+
+  #trust { flex: 1; overflow-y: auto; padding: 4px 28px 28px; }
+  .step { display: grid; grid-template-columns: 28px 1fr; gap: 0 14px; position: relative; padding-bottom: 18px; }
+  .step::before { content: ""; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--line); }
+  .step:last-child::before { display: none; }
+  .dot {
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--mono);
+    background: var(--panel); border: 1px solid var(--line); color: var(--faint); transition: all .3s;
+  }
+  .step.done .dot { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+  .step.wait .dot { background: var(--warn-bg); border-color: var(--warn); color: var(--warn); }
+  .step.fail .dot { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+  .step h3 { margin: 3px 0 2px; font-size: 15px; font-weight: 600; color: var(--faint); transition: color .3s; }
+  .step.done h3, .step.wait h3, .step.fail h3 { color: var(--text); }
+  .step .body { color: var(--muted); font-size: 13.5px; min-height: 4px; }
+  .kv { font: 12.5px/1.7 var(--mono); color: var(--muted); }
+  .kv b { color: var(--text); font-weight: 500; }
+
+  .scopes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .scope { font: 12px var(--mono); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); color: var(--faint); transition: all .3s; }
+  .scope.granted { color: var(--ok); border-color: #34d39950; background: var(--ok-bg); }
+  .scope.missing { color: var(--warn); border-color: #fbbf2450; background: var(--warn-bg); }
+  .scope.refused { color: var(--bad); border-color: #f8717150; background: var(--bad-bg); text-decoration: line-through; }
+
+  .approval {
+    margin-top: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+    display: grid; grid-template-columns: 1fr auto; gap: 12px 16px; animation: rise .3s ease-out;
+  }
+  .approval .from { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .approval .from::before { content: ""; width: 18px; height: 18px; border-radius: 5px; background: var(--airline); opacity: .85; }
+  .approval .intent { font-size: 15px; color: var(--text); line-height: 1.45; }
+  .ring { width: 64px; height: 64px; position: relative; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 5; }
+  .ring .track { stroke: var(--line); }
+  .ring .bar { stroke: var(--warn); stroke-linecap: round; transition: stroke .3s; }
+  .ring span { position: absolute; inset: 0; display: grid; place-items: center; font: 600 17px var(--mono); }
+  .actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .actions button { all: unset; cursor: pointer; text-align: center; padding: 11px; border-radius: 10px; font-weight: 600; }
+  .actions .deny { background: var(--panel); border: 1px solid var(--line); }
+  .actions .allow { background: var(--ok); color: #04261a; }
+  .noanswer { grid-column: 1 / -1; color: var(--muted); font-size: 13px; text-align: center; padding: 8px; border: 1px dashed var(--line); border-radius: 10px; }
+  .verdict { grid-column: 1 / -1; font-weight: 600; text-align: center; padding: 9px; border-radius: 10px; }
+  .verdict.approved { background: var(--ok-bg); color: var(--ok); }
+  .verdict.expired, .verdict.denied { background: var(--bad-bg); color: var(--bad); }
+
+  .receipt { margin-top: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: 12.5px/1.7 var(--mono); }
+  .receipt .sig { color: var(--ok); }
+  .receipt .none { color: var(--bad); }
+
+  .report {
+    margin: 0 28px 24px; padding: 16px 18px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line);
+    animation: rise .3s ease-out;
+  }
+  .report small { display: block; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
+  .error { margin: 0 28px 16px; padding: 12px 16px; border-radius: 12px; background: var(--bad-bg); color: var(--bad); font: 13px var(--mono); }
+
+  details { border-top: 1px solid var(--line); }
+  summary { cursor: pointer; padding: 12px 28px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  #log { max-height: 220px; overflow-y: auto; padding: 0 28px 16px; font: 11.5px/1.7 var(--mono); color: var(--muted); }
+  #log b { color: var(--text); font-weight: 500; }
+
+  @media (max-width: 900px) {
+    header { flex-wrap: wrap; padding: 14px 16px; }
+    main { grid-template-columns: 1fr; }
+    section + section { border-left: 0; border-top: 1px solid var(--line); }
+    .head, #transcript, #trust { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><b>Handshake</b><span>PACT over a live voice call</span></div>
+  <div class="seg" role="group" aria-label="Scenario">
+    <button data-scenario="happy" aria-pressed="true">Happy path</button>
+    <button data-scenario="unreachable" aria-pressed="false">Owner unreachable</button>
+    <button data-scenario="overreach" aria-pressed="false">Overreach</button>
+  </div>
+  <button class="start" id="start">Start call</button>
+  <div class="status" id="status"><i></i><span>idle</span></div>
+</header>
+
+<main>
+  <section>
+    <div class="head">The call
+      <div class="parties"><span class="a">Northwind Airways support agent</span><span class="p">Pocket, Abdul's agent</span></div>
+    </div>
+    <div id="transcript"><div class="empty">Pocket is about to call Northwind Airways to move Abdul's Nov 17 flight.</div></div>
+    <div id="footer"></div>
+  </section>
+
+  <section>
+    <div class="head">Trust layer</div>
+    <div id="trust"></div>
+    <details><summary>Audit log</summary><div id="log"></div></details>
+  </section>
+</main>
+
+<script>
+const STEPS = [
+  ["identity", "Agent identity"],
+  ["delegation", "Delegated access"],
+  ["binding", "Call bound to session"],
+  ["caller", "Caller type"],
+  ["stepup", "Step-up required"],
+  ["owner", "Owner approval"],
+  ["receipt", "Signed receipt"],
+];
+const ALL_SCOPES = ["bookings:read", "bookings:change", "payments:charge"];
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let scenario = "happy", clockOffset = 0, countdown = null, callTimer = null, startedAt = 0, approvalId = null;
+
+function renderSteps() {
+  $("#trust").innerHTML = STEPS.map(([id, title], i) =>
+    `<div class="step" id="s-${id}"><div class="dot">${i + 1}</div><div><h3>${title}</h3><div class="body"></div></div></div>`
+  ).join("");
+}
+function step(id, state, html) {
+  const el = $(`#s-${id}`);
+  el.classList.remove("done", "wait", "fail");
+  if (state) el.classList.add(state);
+  if (html !== undefined) el.querySelector(".body").innerHTML = html;
+  el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+let requested = [];
+function scopesHtml(granted, missing = [], refused = []) {
+  const cls = (s) => granted.includes(s) ? "granted" : missing.includes(s) ? "missing" : refused.includes(s) ? "refused" : "";
+  return `<div class="scopes">${ALL_SCOPES.map((s) => `<span class="scope ${cls(s)}">${s}</span>`).join("")}</div>`;
+}
+
+function add(el) {
+  const t = $("#transcript");
+  t.querySelector(".empty")?.remove();
+  t.appendChild(el);
+  t.scrollTop = t.scrollHeight;
+}
+function say(speaker, text) {
+  const el = document.createElement("div");
+  el.className = `msg ${speaker}`;
+  const words = esc(text).split(/\s+/).map((w, i) => `<span class="w" style="animation-delay:${i * 45}ms">${w}</span>`).join(" ");
+  el.innerHTML = `<div class="who">${speaker === "airline" ? "Northwind" : "Pocket"}</div><div class="bubble">${words}</div>`;
+  add(el);
+}
+function sys(html, tone = "") {
+  const el = document.createElement("div");
+  el.className = `sys ${tone}`;
+  el.innerHTML = html;
+  add(el);
+}
+
+const TOOL_SCOPE = { get_booking: "bookings:read", search_flights: "bookings:read", quote_change: "bookings:read", change_flight: "bookings:change" };
+function toolLine(e) {
+  if (e.side !== "airline") return;
+  const r = e.result || {};
+  const args = Object.values(e.args || {}).join(", ");
+  if (r.status === "TASK_STATE_AUTH_REQUIRED") return sys(`${e.name}(${esc(args)}) <b>AUTH_REQUIRED</b>`, "warn");
+  if (r.status === "not_approved") return sys(`${e.name}(${esc(args)}) <b>refused</b>, owner did not approve`, "bad");
+  if (r.error) return sys(`${e.name}(${esc(args)}) <b>${esc(r.error)}</b>`, "bad");
+  sys(`${e.name}(${esc(args)}) <b>ok</b> under ${TOOL_SCOPE[e.name]}`, "ok");
+}
+
+function approvalCard(e) {
+  approvalId = e.approval_id;
+  const reachable = scenario !== "unreachable";
+  step("owner", "wait", `<div class="approval" id="approval">
+      <div class="from">Northwind Airways, on Abdul's phone</div>
+      <div class="intent">${esc(e.intent)}<div class="kv" style="margin-top:6px">code <b>${esc(e.user_code)}</b></div></div>
+      <div class="ring"><svg width="64" height="64"><circle class="track" cx="32" cy="32" r="28"/><circle class="bar" cx="32" cy="32" r="28"/></svg><span id="secs"></span></div>
+      ${reachable
+        ? `<div class="actions"><button class="deny" onclick="decide(false)">Deny</button><button class="allow" onclick="decide(true)">Approve</button></div>`
+        : `<div class="noanswer">Abdul isn't picking up</div>`}
+    </div>`);
+  const total = e.expires_at - (Date.now() / 1000 + clockOffset);
+  const bar = document.querySelector("#approval .bar");
+  const C = 2 * Math.PI * 28;
+  bar.style.strokeDasharray = C;
+  clearInterval(countdown);
+  const tick = () => {
+    const left = Math.max(0, e.expires_at - (Date.now() / 1000 + clockOffset));
+    $("#secs").textContent = Math.ceil(left);
+    bar.style.strokeDashoffset = C * (1 - left / total);
+    if (left < 6) bar.style.stroke = "var(--bad)";
+    if (left <= 0) clearInterval(countdown);
+  };
+  tick();
+  countdown = setInterval(tick, 100);
+}
+async function decide(approve) {
+  if (!approvalId) return;
+  await fetch(`/approvals/${approvalId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ approve }) });
+}
+
+function receiptHtml(c) {
+  const actions = c.actions.length
+    ? c.actions.map((a) => `<div><b>${esc(a.type)}</b> ${esc(a.from)} -> ${esc(a.to)}, charged <b>$${(a.charged_cents / 100).toFixed(2)}</b></div>`).join("")
+    : `<div class="none">actions: [] &nbsp;nothing changed, nothing charged</div>`;
+  return `<div class="receipt">${actions}<div>scopesUsed: ${c.scopesUsed.map(esc).join(", ")}</div>
+    <div>grant: ${esc(c.grantId)}</div><div class="sig">ES256 signature verified by Pocket</div></div>`;
+}
+
+function setStatus(live, label) {
+  $("#status").className = `status ${live ? "live" : ""}`;
+  $("#status span").textContent = label;
+}
+
+function handle(e) {
+  clockOffset = e.t - Date.now() / 1000;
+  const log = $("#log");
+  const { kind, t, ...rest } = e;
+  log.insertAdjacentHTML("beforeend", `<div>${new Date(t * 1000).toISOString().slice(11, 23)} <b>${kind}</b> ${esc(JSON.stringify(rest)).slice(0, 220)}</div>`);
+  log.scrollTop = log.scrollHeight;
+
+  switch (kind) {
+    case "call_started":
+      $("#transcript").innerHTML = ""; $("#footer").innerHTML = ""; log.innerHTML = log.lastElementChild.outerHTML;
+      renderSteps(); clearInterval(countdown); approvalId = null;
+      scenario = e.scenario; selectScenario(scenario);
+      startedAt = Date.now(); clearInterval(callTimer);
+      callTimer = setInterval(() => setStatus(true, `live ${new Date(Date.now() - startedAt).toISOString().slice(14, 19)}`), 250);
+      $("#start").disabled = true;
+      break;
+    case "registered": {
+      const host = new URL(e.agent.iss).host;
+      step("identity", "done", `<div class="kv">platform <b>${esc(host)}</b> &middot; ES256 JWT &middot; lives <b>${e.agent.exp - e.agent.iat}s</b></div>`);
+      step("delegation", "done", `<div class="kv">Abdul granted Pocket <b>read-only</b> access earlier</div>${scopesHtml(e.scopes)}`);
+      break;
+    }
+    case "call_bound":
+      step("binding", "done", `<div class="kv">one-time code <b>${esc(e.code)}</b> sent on the call, matched to the verified session</div>`);
+      sys(`call bound with code <b>${esc(e.code)}</b>`);
+      break;
+    case "caller_classified":
+      step("caller", "done", `<div class="kv">AI agent, <b>declared</b> &middot; detector: ${esc(e.detector)}</div>`);
+      break;
+    case "say": say(e.speaker, e.text); break;
+    case "tool": toolLine(e); break;
+    case "auth_required":
+      requested = Object.keys(e.scopes);
+      step("stepup", "wait", `<div class="kv">${esc(e.intent)}</div>${scopesHtml(["bookings:read"], Object.keys(e.scopes))}`);
+      break;
+    case "owner_notified": approvalCard(e); break;
+    case "approval_resolved": {
+      clearInterval(countdown);
+      const ok = e.status === "approved";
+      document.querySelector("#approval .actions, #approval .noanswer")?.remove();
+      document.querySelector("#approval")?.insertAdjacentHTML("beforeend",
+        `<div class="verdict ${e.status}">${ok ? "Approved by Abdul" : e.status === "denied" ? "Denied by Abdul" : "No answer. Expired."}</div>`);
+      $("#s-owner").classList.replace("wait", ok ? "done" : "fail");
+      step("stepup", ok ? "done" : "fail", $("#s-stepup .body").innerHTML.replace(/<div class="scopes">[\s\S]*<\/div>$/, "") + scopesHtml(e.scopes, [], ok ? [] : requested));
+      sys(ok ? "owner approved on their phone, new delegation token presented" : "owner approval expired, no new permissions", ok ? "ok" : "bad");
+      break;
+    }
+    case "receipt":
+      step("receipt", e.claims.actions.length ? "done" : "fail", receiptHtml(e.claims));
+      break;
+    case "report":
+      $("#footer").insertAdjacentHTML("beforeend", `<div class="report"><small>Pocket's report to Abdul</small>${esc(e.text)}</div>`);
+      break;
+    case "error":
+      $("#footer").insertAdjacentHTML("beforeend", `<div class="error">${esc(e.message)}</div>`);
+      break;
+    case "call_ended":
+      clearInterval(callTimer); setStatus(false, "ended"); $("#start").disabled = false;
+      break;
+  }
+}
+
+function selectScenario(s) {
+  scenario = s;
+  document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.scenario === s));
+}
+document.querySelectorAll(".seg button").forEach((b) => b.onclick = () => selectScenario(b.dataset.scenario));
+$("#start").onclick = () => fetch("/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario }) });
+
+// Recording shortcuts: 1/2/3 pick a scenario, Enter starts, A approves, D denies.
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest("input, textarea")) return;
+  const pick = { 1: "happy", 2: "unreachable", 3: "overreach" }[e.key];
+  if (pick) selectScenario(pick);
+  if (e.key === "Enter" && !$("#start").disabled) $("#start").click();
+  if (e.key.toLowerCase() === "a" && scenario !== "unreachable") decide(true);
+  if (e.key.toLowerCase() === "d") decide(false);
+});
+
+function connect() {
+  const ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/events`);
+  ws.onmessage = (m) => handle(JSON.parse(m.data));
+  ws.onclose = () => setTimeout(connect, 1000);
+}
+renderSteps();
+connect();
+</script>
+</body>
+</html>

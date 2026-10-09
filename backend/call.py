@@ -62,6 +62,9 @@ class Call:
             line = await business.respond(heard)
             await self.speak("airline", line)
 
+            if self.pending:
+                # PACT returns AUTH_REQUIRED to the agent directly, so Pocket knows the state, not just the words.
+                personal.notice("Northwind's system sent an approval request to Abdul's phone. He has NOT answered yet.")
             reply = await personal.respond(line)
             await self.speak("agent", reply)
             if personal.report:
