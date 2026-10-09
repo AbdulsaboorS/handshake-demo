@@ -75,7 +75,7 @@ Seed data lives inline in `airline.py`. Fictional airline and passenger. No real
 uv sync
 uv run pytest -q                                   # gate tests
 uv run python -m backend.call --approve-after 3    # text mode; omit flag = owner unreachable; --overreach
-uv run uvicorn backend.main:app --reload --port 8000
+uv run uvicorn backend.main:app --reload --timeout-graceful-shutdown 1 --port 8000
 ```
 
 ## Style

@@ -70,6 +70,16 @@
   .parties span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; }
   .parties .a::before { background: var(--airline); }
   .parties .p::before { background: var(--agent); }
+  .parties span::before { transition: box-shadow .08s; }
+  .parties .a.talking::before { box-shadow: 0 0 0 var(--lvl, 0px) #38bdf855; }
+  .parties .p.talking::before { box-shadow: 0 0 0 var(--lvl, 0px) #a78bfa55; }
+  .toggle { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; font-weight: 500; cursor: pointer; user-select: none; }
+  .toggle input { appearance: none; width: 34px; height: 20px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; transition: background .2s; margin: 0; }
+  .toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--text); transition: transform .2s; }
+  .toggle input:checked { background: var(--ok); }
+  .toggle input:checked::after { transform: translateX(14px); }
+  .heard { font: 12px/1.5 var(--mono); color: var(--faint); max-width: 100%; }
+  .heard b { color: var(--muted); font-weight: 500; }
 
   #transcript { flex: 1; overflow-y: auto; padding: 8px 28px 28px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
   .empty { margin: auto; color: var(--faint); text-align: center; max-width: 360px; }
@@ -169,6 +179,7 @@
     <button data-scenario="unreachable" aria-pressed="false">Owner unreachable</button>
     <button data-scenario="overreach" aria-pressed="false">Overreach</button>
   </div>
+  <label class="toggle"><input type="checkbox" id="voice" checked> Voice</label>
   <button class="start" id="start">Start call</button>
   <div class="status" id="status"><i></i><span>idle</span></div>
 </header>
@@ -176,7 +187,7 @@
 <main>
   <section>
     <div class="head">The call
-      <div class="parties"><span class="a">Northwind Airways support agent</span><span class="p">Pocket, Abdul's agent</span></div>
+      <div class="parties"><span class="a" id="party-airline">Northwind Airways support agent</span><span class="p" id="party-agent">Pocket, Abdul's agent</span></div>
     </div>
     <div id="transcript"><div class="empty">Pocket is about to call Northwind Airways to move Abdul's Nov 17 flight.</div></div>
     <div id="footer"></div>
@@ -235,6 +246,51 @@ function say(speaker, text) {
   const words = esc(text).split(/\s+/).map((w, i) => `<span class="w" style="animation-delay:${i * 45}ms">${w}</span>`).join(" ");
   el.innerHTML = `<div class="who">${speaker === "airline" ? "Northwind" : "Pocket"}</div><div class="bubble">${words}</div>`;
   add(el);
+  lastSaid[speaker] = el;
+}
+const lastSaid = {};
+function heard(by, text) {
+  const speaker = by === "airline" ? "agent" : "airline";
+  lastSaid[speaker]?.insertAdjacentHTML("beforeend",
+    `<div class="heard"><b>${by === "airline" ? "Northwind" : "Pocket"} heard:</b> ${esc(text) || "(nothing)"}</div>`);
+  $("#transcript").scrollTop = $("#transcript").scrollHeight;
+}
+
+let listener = null, meterFrame = null;
+async function listen() {
+  listener?.close();
+  const { session, offer } = await (await fetch("/rtc/listen", { method: "POST" })).json();
+  const pc = listener = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] });
+  const ctx = new AudioContext();
+  const meters = [];
+  pc.ontrack = (e) => {
+    const audio = new Audio();
+    audio.srcObject = new MediaStream([e.track]);
+    audio.play();
+    // SFU offers tracks in the order the server asked: Pocket, then Northwind.
+    const who = pc.getTransceivers().indexOf(e.transceiver) === 0 ? "agent" : "airline";
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    ctx.createMediaStreamSource(new MediaStream([e.track])).connect(analyser);
+    meters.push([who, analyser, new Uint8Array(analyser.fftSize)]);
+  };
+  await pc.setRemoteDescription(offer);
+  await pc.setLocalDescription(await pc.createAnswer());
+  await new Promise((r) => pc.iceGatheringState === "complete" ? r() : pc.addEventListener("icegatheringstatechange", () => pc.iceGatheringState === "complete" && r()));
+  await fetch("/rtc/answer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session, sdp: pc.localDescription.sdp }) });
+  cancelAnimationFrame(meterFrame);
+  const draw = () => {
+    for (const [who, analyser, buf] of meters) {
+      analyser.getByteTimeDomainData(buf);
+      let peak = 0;
+      for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
+      const el = $(`#party-${who}`);
+      el.classList.toggle("talking", peak > 4);
+      el.style.setProperty("--lvl", `${Math.min(10, peak / 6)}px`);
+    }
+    meterFrame = requestAnimationFrame(draw);
+  };
+  draw();
 }
 function sys(html, tone = "") {
   const el = document.createElement("div");
@@ -243,7 +299,7 @@ function sys(html, tone = "") {
   add(el);
 }
 
-const TOOL_SCOPE = { get_booking: "bookings:read", search_flights: "bookings:read", quote_change: "bookings:read", change_flight: "bookings:change" };
+const TOOL_SCOPE = { list_bookings: "bookings:read", get_booking: "bookings:read", search_flights: "bookings:read", quote_change: "bookings:read", change_flight: "bookings:change" };
 function toolLine(e) {
   if (e.side !== "airline") return;
   const r = e.result || {};
@@ -320,10 +376,14 @@ function handle(e) {
       step("delegation", "done", `<div class="kv">Abdul granted Pocket <b>read-only</b> access earlier</div>${scopesHtml(e.scopes)}`);
       break;
     }
+    case "line_open": listen(); break;
     case "call_bound":
-      step("binding", "done", `<div class="kv">one-time code <b>${esc(e.code)}</b> sent on the call, matched to the verified session</div>`);
-      sys(`call bound with code <b>${esc(e.code)}</b>`);
+      step("binding", "done", e.in_band
+        ? `<div class="kv">one-time code <b>${esc(e.code)}</b> sent as keypad tones, decoded by Northwind, matched to the verified session</div>`
+        : `<div class="kv">one-time code <b>${esc(e.code)}</b> sent on the call, matched to the verified session</div>`);
+      sys(e.in_band ? `keypad tones decoded: <b>${esc(e.code)}</b> &middot; call bound` : `call bound with code <b>${esc(e.code)}</b>`);
       break;
+    case "heard": heard(e.by, e.text); break;
     case "caller_classified":
       step("caller", "done", `<div class="kv">AI agent, <b>declared</b> &middot; detector: ${esc(e.detector)}</div>`);
       break;
@@ -355,6 +415,8 @@ function handle(e) {
       $("#footer").insertAdjacentHTML("beforeend", `<div class="error">${esc(e.message)}</div>`);
       break;
     case "call_ended":
+      listener?.close(); listener = null; cancelAnimationFrame(meterFrame);
+      document.querySelectorAll(".parties span").forEach((el) => el.classList.remove("talking"));
       clearInterval(callTimer); setStatus(false, "ended"); $("#start").disabled = false;
       break;
   }
@@ -365,7 +427,7 @@ function selectScenario(s) {
   document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.scenario === s));
 }
 document.querySelectorAll(".seg button").forEach((b) => b.onclick = () => selectScenario(b.dataset.scenario));
-$("#start").onclick = () => fetch("/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario }) });
+$("#start").onclick = () => fetch("/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario, voice: $("#voice").checked }) });
 
 // Recording shortcuts: 1/2/3 pick a scenario, Enter starts, A approves, D denies.
 document.addEventListener("keydown", (e) => {

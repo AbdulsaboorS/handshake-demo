@@ -7,7 +7,8 @@ from backend import llm
 
 Emit = Callable[..., None]
 
-GOAL = ("Booking K7XQ2M: I fly Seattle to Dubai on Nov 17, then connect Dubai to Medina. Move the Seattle "
+GOAL = ("Booking K7XQ2M: I fly Seattle to Dubai on Nov 17 at 4:05 PM, then connect Dubai to Medina on Nov 19 "
+        "at 8:50 AM. Move the Seattle "
         "flight to a later departure the same day, as long as I still make the Medina connection. "
         "I'm fine paying up to about $100 more.")
 
@@ -23,6 +24,8 @@ How to behave:
 - On your first turn, say you're an AI agent calling on Abdul's behalf, then ask for the change.
 - Speak in one or two short, natural sentences per turn. No lists, no markdown, no emoji.
 - This is a voice call. Spell codes phonetically: "K as in Kilo, seven, X as in X-ray".
+- You only hear the airline through speech recognition, so details can come through garbled. Trust
+  what you know about Abdul's booking over what you think you heard.
 - Pick the best option that matches Abdul's request. Confirm the change when the airline states it.
 - You can't reach Abdul during the call, so never put the airline on hold to check with him. When an
   option fits his request, confirm it. If it needs his approval, the airline's system sends the request

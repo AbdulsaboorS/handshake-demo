@@ -48,10 +48,16 @@ async def _push(intent: str) -> None:
 
 class StartCall(BaseModel):
     scenario: Literal["happy", "unreachable", "overreach"]
+    voice: bool = False
 
 
 class Decision(BaseModel):
     approve: bool
+
+
+class Answer(BaseModel):
+    session: str
+    sdp: str
 
 
 @app.get("/")
@@ -70,8 +76,8 @@ async def start_call(body: StartCall):
     if task and not task.done():
         task.cancel()
     history.clear()
-    current = Call(emit, overreach=body.scenario == "overreach")
-    emit("call_started", scenario=body.scenario)
+    current = Call(emit, overreach=body.scenario == "overreach", voice=body.voice)
+    emit("call_started", scenario=body.scenario, voice=body.voice)
 
     async def run(call: Call):
         try:
@@ -91,6 +97,28 @@ async def decide(approval_id: str, body: Decision):
     if current is None or approval_id not in current.provider.approvals:
         raise HTTPException(404, "no such approval")
     return {"status": current.provider.resolve(approval_id, body.approve).status}
+
+
+@app.post("/rtc/listen")
+async def rtc_listen():
+    """The browser joins the call as a listener. The server talks to Cloudflare so the app token stays here."""
+    from backend.voice import listen_in
+
+    if current is None or not current.voice:
+        raise HTTPException(409, "no voice call running")
+    session, offer = await listen_in(current.line.api, current.line.tracks())
+    return {"session": session, "offer": offer}
+
+
+@app.post("/rtc/answer")
+async def rtc_answer(body: Answer):
+    from aiortc import RTCSessionDescription
+
+    if current is None or not current.voice:
+        raise HTTPException(409, "no voice call running")
+    await current.line.api.renegotiate(body.session, RTCSessionDescription(sdp=body.sdp, type="answer"))
+    current.listener_ready.set()
+    return {"ok": True}
 
 
 @app.websocket("/events")
