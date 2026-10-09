@@ -1,0 +1,7 @@
+.env
+SESSION.md
+.venv/
+__pycache__/
+*.pyc
+keys/
+.DS_Store
