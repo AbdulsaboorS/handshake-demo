@@ -15,6 +15,7 @@ from backend.personal_agent import PersonalAgent
 
 AUD = "https://northwind.example/a2a"
 MAX_TURNS = 12
+QUICK_APPROVAL_S = 6
 
 Emit = Callable[..., None]
 
@@ -101,22 +102,24 @@ class Call:
         business = BusinessAgent(self.provider, session, emit, self._queue_auth_required)
         personal = PersonalAgent(emit, self.overreach)
 
-        heard = "(call connected)"
+        line = await self.say("airline", business.greet())
         for _ in range(MAX_TURNS):
-            line = await self.say("airline", await business.respond(heard))
-
             if self.pending:
                 # PACT returns AUTH_REQUIRED to the agent directly, so Pocket knows the state, not just the words.
                 personal.notice("Northwind's system sent an approval request to Abdul's phone. He has NOT answered yet.")
             heard = await self.say("agent", await personal.respond(line))
-            if personal.report:
+            if personal.hung_up:
                 break
 
             if approval := self.pending:
                 self.pending = None
-                # The line stays open while the owner decides.
-                line = await self.say("airline", await business.respond(heard))
-                token = await self.waiting
+                try:
+                    token = await asyncio.wait_for(asyncio.shield(self.waiting), QUICK_APPROVAL_S)
+                    line = "(quiet on the line)"
+                except TimeoutError:
+                    # The line stays open while the owner decides.
+                    line = await self.say("airline", await business.respond(heard))
+                    token = await self.waiting
                 if token:
                     self.provider.upgrade(session, token)
                     emit("approval_resolved", status="approved", scopes=sorted(session.scopes))
@@ -129,12 +132,15 @@ class Call:
                     personal.notice(f"Abdul {why}. Nothing is authorized. Tell the airline not to make the change.")
                     business.notice(f"Owner approval {approval.status}. No new permissions. Do not make the change.")
                 heard = await self.say("agent", await personal.respond(line))
-                if personal.report:
+                if personal.hung_up:
                     break
 
+            line = await self.say("airline", await business.respond(heard))
+
         receipt = self.provider.receipt(session)
-        emit("receipt", jws=receipt, claims=verify_receipt(receipt, self.provider.signer.public_key))
-        emit("report", text=personal.report or "Call ended without a report.")
+        claims = verify_receipt(receipt, self.provider.signer.public_key)
+        emit("receipt", jws=receipt, claims=claims)
+        emit("report", text=await personal.report(claims))
 
 
 if __name__ == "__main__":

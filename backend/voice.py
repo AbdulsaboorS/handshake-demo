@@ -13,11 +13,12 @@ import httpx
 import numpy as np
 
 from backend import dtmf
+from backend.llm import post_with_retry
 from backend.realtime import RATE, Peer, RealtimeAPI
 
 VOICES = {"airline": "asteria", "agent": "orion"}
 SPEECH_RMS = 300
-END_OF_TURN_S = 0.7
+END_OF_TURN_S = 0.55
 PREROLL_FRAMES = 3
 
 _ai = httpx.AsyncClient(
@@ -28,10 +29,9 @@ _ai = httpx.AsyncClient(
 
 
 async def tts(text: str, voice: str) -> np.ndarray:
-    r = await _ai.post("/@cf/deepgram/aura-1", json={
+    r = await post_with_retry(_ai, "/@cf/deepgram/aura-1", json={
         "text": text, "speaker": voice, "encoding": "linear16", "sample_rate": RATE, "container": "none",
     })
-    r.raise_for_status()
     return np.frombuffer(r.content, dtype=np.int16)
 
 
@@ -42,8 +42,8 @@ async def stt(pcm: np.ndarray) -> str:
         w.setsampwidth(2)
         w.setframerate(16000)
         w.writeframes(pcm[::3].tobytes())  # 48k -> 16k is plenty for speech
-    r = await _ai.post("/@cf/deepgram/nova-3?smart_format=true", content=buf.getvalue(), headers={"Content-Type": "audio/wav"})
-    r.raise_for_status()
+    r = await post_with_retry(_ai, "/@cf/deepgram/nova-3?smart_format=true", content=buf.getvalue(),
+                              headers={"Content-Type": "audio/wav"})
     return r.json()["result"]["results"]["channels"][0]["alternatives"][0]["transcript"]
 
 

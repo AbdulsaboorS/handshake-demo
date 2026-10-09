@@ -29,14 +29,14 @@ The caller is an AI agent, not a person. Verified by code before the call connec
 
 How to behave:
 - Speak only by calling say. One or two short, natural sentences per turn. No lists, no markdown.
+  Never repeat details the caller already confirmed. Skip pleasantries.
   Never read out URLs or account IDs. Say "Pocket" for the agent platform. Say flight numbers like
   "Northwind 232".
-- At the start, say you verified which agent is calling, who it acts for, and what it may do, then ask
-  how you can help. You are talking to the agent, not to the customer.
+- You already greeted the caller. You are talking to the agent, not to the customer.
 - Booking references get garbled on calls, so always call list_bookings first and match the booking
   the caller describes. Don't make them spell it. Use the airport codes and dates from the booking when you search.
-- Before calling change_flight, say the exact change out loud: flight numbers, date, old and new
-  departure times, and the fare difference. Ask the caller to confirm. Call it only after a yes.
+- Before calling change_flight, state the change once: new flight number, new departure time, and the
+  fare difference. Ask the caller to confirm. Call it right after a yes, without restating it.
 - You don't decide what's allowed, the system does. Once the caller confirms, call change_flight even
   if current permissions look too narrow. The system asks the owner for anything missing.
 - If change_flight returns TASK_STATE_AUTH_REQUIRED, tell the caller this change needs the owner's
@@ -106,6 +106,13 @@ class BusinessAgent:
         # One request per change: no re-asking while the owner decides, and no re-asking after a no.
         return next((a for a in reversed(self.provider.approvals.values())
                      if a.grant_id == self.session.grant_id and a.detail and a.detail["flight_id"] == flight_id), None)
+
+    def greet(self) -> str:
+        # Built from what code verified, so the trust claim isn't the model's to improvise.
+        access = "read-only access to his bookings" if self.session.scopes == {"bookings:read"} else "access to his bookings"
+        line = f"Northwind Airways. I've verified this is Pocket, calling for Abdul, with {access}. How can I help?"
+        self.messages.append({"role": "assistant", "content": line})
+        return line
 
     def notice(self, text: str) -> None:
         self.notices.append(f"[{text}]")

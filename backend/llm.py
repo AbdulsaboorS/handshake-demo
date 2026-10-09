@@ -1,5 +1,6 @@
 """Workers AI client. The only place that talks to a model."""
 
+import asyncio
 import json
 import os
 from collections.abc import Awaitable, Callable
@@ -37,9 +38,23 @@ async def chat(messages: list[dict], tools: list[dict] | None = None) -> dict:
     body = {"model": os.environ["LLM_MODEL"], "messages": messages, "temperature": 0.1}
     if tools:
         body["tools"] = tools
-    r = await _client.post("/chat/completions", json=body)
-    r.raise_for_status()
+    r = await post_with_retry(_client, "/chat/completions", json=body)
     return r.json()["choices"][0]["message"]
+
+
+async def post_with_retry(client: httpx.AsyncClient, url: str, **kwargs) -> httpx.Response:
+    """One retry on a server error or timeout. A blip shouldn't end a live call."""
+    for attempt in (1, 2):
+        try:
+            r = await client.post(url, **kwargs)
+            if r.status_code < 500 or attempt == 2:
+                r.raise_for_status()
+                return r
+        except httpx.TransportError:
+            if attempt == 2:
+                raise
+        await asyncio.sleep(0.5)
+    raise AssertionError("unreachable")
 
 
 SAY = tool("say", "Say this out loud to the other party. Every turn ends with exactly one say.", text="What to say")
@@ -63,7 +78,11 @@ async def run_turn(
             return (msg.get("content") or "").strip()
         said = None
         for call in calls:
-            name, args = call["function"]["name"], json.loads(call["function"]["arguments"] or "{}")
+            name = call["function"]["name"]
+            try:
+                args = json.loads(call["function"]["arguments"] or "{}")
+            except json.JSONDecodeError:
+                args = {}
             if name == "say":
                 said, result = args.get("text", ""), {"status": "said"}
             else:
