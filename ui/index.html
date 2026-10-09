@@ -4,176 +4,206 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Handshake</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%2311141a'/><circle cx='12' cy='16' r='5' fill='%23a78bfa'/><circle cx='20' cy='16' r='5' fill='%2338bdf8' fill-opacity='.85'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0b0d12;
-    --panel: #12151c;
-    --panel-2: #181c25;
-    --line: #232836;
-    --text: #e8eaf0;
-    --muted: #8a91a3;
-    --faint: #555c6e;
+    --bg: #0a0c10;
+    --panel: #11141a;
+    --panel-2: #161a22;
+    --line: #1f2430;
+    --line-2: #2a3040;
+    --text: #eceef3;
+    --muted: #8b92a5;
+    --faint: #525a6c;
     --agent: #a78bfa;
-    --agent-bg: #a78bfa1a;
+    --agent-soft: #a78bfa1f;
     --airline: #38bdf8;
-    --airline-bg: #38bdf81a;
+    --airline-soft: #38bdf81c;
     --ok: #34d399;
-    --ok-bg: #34d39918;
+    --ok-soft: #34d3991c;
     --warn: #fbbf24;
-    --warn-bg: #fbbf2418;
+    --warn-soft: #fbbf241c;
     --bad: #f87171;
-    --bad-bg: #f8717118;
+    --bad-soft: #f871711c;
     --mono: "JetBrains Mono", ui-monospace, monospace;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.5 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased;
-    display: grid; grid-template-rows: auto 1fr;
+    margin: 0; color: var(--text); font: 16px/1.5 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+    background: radial-gradient(1200px 600px at 20% -10%, #a78bfa0d, transparent 60%),
+                radial-gradient(1000px 500px at 85% -10%, #38bdf80b, transparent 60%), var(--bg);
+    display: grid; grid-template-rows: auto 1fr; overflow: hidden;
   }
 
-  header {
-    display: flex; align-items: center; gap: 24px; padding: 18px 28px;
-    border-bottom: 1px solid var(--line);
-  }
-  .brand { display: flex; flex-direction: column; margin-right: auto; }
-  .brand b { font-size: 20px; letter-spacing: -0.01em; }
+  /* header */
+  header { display: flex; align-items: center; gap: 20px; padding: 16px 32px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 12px; margin-right: auto; }
+  .mark { width: 34px; height: 34px; position: relative; }
+  .mark i { position: absolute; top: 7px; width: 20px; height: 20px; border-radius: 50%; }
+  .mark i:first-child { left: 0; background: var(--agent); }
+  .mark i:last-child { right: 0; background: var(--airline); opacity: .85; mix-blend-mode: screen; }
+  .brand b { display: block; font-size: 19px; letter-spacing: -0.01em; }
   .brand span { color: var(--muted); font-size: 13px; }
-  .seg { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
-  .seg button {
-    all: unset; cursor: pointer; padding: 8px 14px; border-radius: 7px; color: var(--muted); font-weight: 500; font-size: 14px;
-  }
-  .seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
-  .start {
-    all: unset; cursor: pointer; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px;
-    background: var(--text); color: var(--bg);
-  }
-  .start:disabled { opacity: .4; cursor: default; }
-  .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font: 500 13px var(--mono); min-width: 110px; }
-  .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
-  .status.live i { background: var(--bad); animation: pulse 1.4s infinite; }
-  .status.live { color: var(--text); }
-  @keyframes pulse { 50% { opacity: .3; } }
-
-  main { display: grid; grid-template-columns: 1.3fr 1fr; min-height: 0; }
-  section { display: flex; flex-direction: column; min-height: 0; }
-  section + section { border-left: 1px solid var(--line); }
-  .head {
-    display: flex; align-items: center; justify-content: space-between; padding: 16px 28px;
-    color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-  }
-  .parties { display: flex; gap: 18px; text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 13px; }
-  .parties span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; }
-  .parties .a::before { background: var(--airline); }
-  .parties .p::before { background: var(--agent); }
-  .parties span::before { transition: box-shadow .08s; }
-  .parties .a.talking::before { box-shadow: 0 0 0 var(--lvl, 0px) #38bdf855; }
-  .parties .p.talking::before { box-shadow: 0 0 0 var(--lvl, 0px) #a78bfa55; }
+  .seg { display: flex; background: var(--panel); border: 1px solid var(--line); border-radius: 11px; padding: 3px; }
+  .seg button { all: unset; cursor: pointer; padding: 8px 14px; border-radius: 8px; color: var(--muted); font-weight: 500; font-size: 14px; }
+  .seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
   .toggle { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; font-weight: 500; cursor: pointer; user-select: none; }
-  .toggle input { appearance: none; width: 34px; height: 20px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; transition: background .2s; margin: 0; }
+  .toggle input { appearance: none; width: 34px; height: 20px; border-radius: 999px; background: var(--line-2); position: relative; cursor: pointer; transition: background .2s; margin: 0; }
   .toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--text); transition: transform .2s; }
   .toggle input:checked { background: var(--ok); }
   .toggle input:checked::after { transform: translateX(14px); }
-  .heard { font: 12px/1.5 var(--mono); color: var(--faint); max-width: 100%; }
-  .heard b { color: var(--muted); font-weight: 500; }
+  .start { all: unset; cursor: pointer; padding: 10px 18px; border-radius: 11px; font-weight: 600; font-size: 14px; background: var(--text); color: var(--bg); }
+  .start:disabled { opacity: .35; cursor: default; }
 
-  #transcript { flex: 1; overflow-y: auto; padding: 8px 28px 28px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
-  .empty { margin: auto; color: var(--faint); text-align: center; max-width: 360px; }
-  .msg { max-width: 78%; display: flex; flex-direction: column; gap: 4px; animation: rise .25s ease-out; }
-  .msg .who { font-size: 12px; font-weight: 600; color: var(--muted); }
-  .msg .bubble { padding: 12px 16px; border-radius: 14px; font-size: 16.5px; line-height: 1.5; }
+  main { display: grid; grid-template-columns: 1.3fr 1fr; min-height: 0; }
+  section { display: flex; flex-direction: column; min-height: 0; }
+  section + section { border-left: 1px solid var(--line); background: #0c0e1380; }
+  .label { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+
+  /* call stage */
+  .stage { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding: 22px 32px; border-bottom: 1px solid var(--line); }
+  .party { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); transition: border-color .2s, box-shadow .2s; }
+  .party.agent { flex-direction: row-reverse; text-align: right; }
+  .avatar { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+  .agent .avatar { background: var(--agent-soft); color: var(--agent); }
+  .airline .avatar { background: var(--airline-soft); color: var(--airline); }
+  .party b { display: block; font-size: 16px; }
+  .party small { color: var(--muted); font-size: 13px; }
+  .party .who { flex: 1; min-width: 0; }
+  .party.talking.agent { border-color: #a78bfa66; box-shadow: 0 0 0 4px #a78bfa14; }
+  .party.talking.airline { border-color: #38bdf866; box-shadow: 0 0 0 4px #38bdf814; }
+  .wave { display: flex; align-items: center; gap: 3px; height: 28px; }
+  .wave i { width: 4px; border-radius: 2px; height: 4px; transition: height .08s; }
+  .agent .wave i { background: var(--agent); }
+  .airline .wave i { background: var(--airline); }
+  .link { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 190px; }
+  .wire { width: 100%; height: 2px; background: var(--line-2); position: relative; border-radius: 1px; overflow: hidden; }
+  .wire::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--airline), var(--agent)); transform: scaleX(0); transition: transform .6s ease; }
+  .link.bound .wire::after { transform: scaleX(1); }
+  .link.live .wire::after { transform: scaleX(.35); animation: scan 1.4s ease-in-out infinite; }
+  @keyframes scan { 0%, 100% { transform: translateX(-70%) scaleX(.35); } 50% { transform: translateX(70%) scaleX(.35); } }
+  .chip { font: 500 12.5px var(--mono); color: var(--muted); padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel); white-space: nowrap; }
+  .link.bound .chip { color: var(--ok); border-color: #34d39955; background: var(--ok-soft); }
+  .timer { font: 500 13px var(--mono); color: var(--faint); }
+  .timer.live { color: var(--text); }
+  .timer.live::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--bad); margin-right: 7px; vertical-align: 1px; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+
+  /* transcript */
+  #transcript { flex: 1; overflow-y: auto; padding: 24px 32px 28px; display: flex; flex-direction: column; gap: 16px; scrollbar-width: none; }
+  #transcript::-webkit-scrollbar { display: none; }
+  .empty { margin: auto; color: var(--faint); text-align: center; max-width: 420px; font-size: 17px; }
+  .msg { max-width: 76%; display: flex; flex-direction: column; gap: 6px; animation: rise .25s ease-out; }
   .msg.airline { align-self: flex-start; }
-  .msg.airline .bubble { background: var(--airline-bg); border: 1px solid #38bdf833; border-top-left-radius: 4px; }
   .msg.agent { align-self: flex-end; align-items: flex-end; }
-  .msg.agent .bubble { background: var(--agent-bg); border: 1px solid #a78bfa33; border-top-right-radius: 4px; }
-  .bubble .w { opacity: 0; animation: word .2s forwards; }
+  .bubble { padding: 13px 18px; border-radius: 18px; font-size: 18px; line-height: 1.5; }
+  .airline .bubble { background: var(--airline-soft); border: 1px solid #38bdf82e; border-bottom-left-radius: 6px; }
+  .agent .bubble { background: var(--agent-soft); border: 1px solid #a78bfa2e; border-bottom-right-radius: 6px; }
+  .bubble .w { opacity: 0; animation: word .18s forwards; }
   @keyframes word { to { opacity: 1; } }
-  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
-  .sys {
-    align-self: center; font: 12.5px var(--mono); color: var(--muted); background: var(--panel);
-    border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; animation: rise .25s ease-out;
-  }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  .heard { font: 12.5px/1.5 var(--mono); color: var(--faint); padding: 0 6px; }
+  .heard b { color: var(--muted); font-weight: 500; }
+  .sys { align-self: center; font: 13px var(--mono); color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 13px; animation: rise .25s ease-out; }
   .sys b { color: var(--text); font-weight: 500; }
   .sys.ok { color: var(--ok); border-color: #34d39940; }
   .sys.warn { color: var(--warn); border-color: #fbbf2440; }
   .sys.bad { color: var(--bad); border-color: #f8717140; }
 
-  #trust { flex: 1; overflow-y: auto; padding: 4px 28px 28px; }
-  .step { display: grid; grid-template-columns: 28px 1fr; gap: 0 14px; position: relative; padding-bottom: 18px; }
-  .step::before { content: ""; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--line); }
+  /* outcome */
+  #outcome:empty { display: none; }
+  #outcome { padding: 0 32px 26px; }
+  .result { border-radius: 18px; padding: 18px 22px; display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; align-items: center; animation: rise .35s ease-out; border: 1px solid; }
+  .result.ok { background: var(--ok-soft); border-color: #34d39955; }
+  .result.none { background: var(--bad-soft); border-color: #f8717155; }
+  .result .icon { grid-row: span 2; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; font-weight: 700; }
+  .result.ok .icon { background: var(--ok); color: #052e1f; }
+  .result.none .icon { background: var(--bad); color: #3a0b0b; }
+  .result h2 { margin: 0; font-size: 21px; letter-spacing: -0.01em; }
+  .result p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .report { margin-top: 12px; padding: 14px 18px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); font-size: 15.5px; }
+  .report .label { display: block; margin-bottom: 4px; font-size: 11px; }
+  .error { margin: 0 32px 16px; padding: 12px 16px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font: 13px var(--mono); }
+
+  /* trust layer */
+  .trust-head { padding: 22px 32px 10px; }
+  .trust-head p { margin: 4px 0 0; color: var(--faint); font-size: 13.5px; }
+  #trust { flex: 1; overflow-y: auto; padding: 8px 32px 24px; scrollbar-width: none; }
+  #trust::-webkit-scrollbar { display: none; }
+  .step { display: grid; grid-template-columns: 30px 1fr; gap: 0 14px; position: relative; padding-bottom: 16px; }
+  .step::before { content: ""; position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: var(--line); }
   .step:last-child::before { display: none; }
-  .dot {
-    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--mono);
-    background: var(--panel); border: 1px solid var(--line); color: var(--faint); transition: all .3s;
-  }
-  .step.done .dot { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
-  .step.wait .dot { background: var(--warn-bg); border-color: var(--warn); color: var(--warn); }
-  .step.fail .dot { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
-  .step h3 { margin: 3px 0 2px; font-size: 15px; font-weight: 600; color: var(--faint); transition: color .3s; }
+  .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 600 12px var(--mono); background: var(--panel); border: 1px solid var(--line-2); color: var(--faint); transition: all .3s; }
+  .step.done .dot { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+  .step.wait .dot { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); box-shadow: 0 0 0 5px #fbbf2412; }
+  .step.fail .dot { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+  .step h3 { margin: 4px 0 3px; font-size: 15.5px; font-weight: 600; color: var(--faint); transition: color .3s; }
   .step.done h3, .step.wait h3, .step.fail h3 { color: var(--text); }
-  .step .body { color: var(--muted); font-size: 13.5px; min-height: 4px; }
-  .kv { font: 12.5px/1.7 var(--mono); color: var(--muted); }
+  .step .body { color: var(--muted); font-size: 13.5px; }
+  .kv { font: 12.5px/1.75 var(--mono); color: var(--muted); }
   .kv b { color: var(--text); font-weight: 500; }
+  .scopes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .scope { font: 12px var(--mono); padding: 3px 9px; border-radius: 7px; border: 1px solid var(--line-2); color: var(--faint); transition: all .3s; }
+  .scope.granted { color: var(--ok); border-color: #34d39950; background: var(--ok-soft); }
+  .scope.missing { color: var(--warn); border-color: #fbbf2450; background: var(--warn-soft); }
+  .scope.refused { color: var(--bad); border-color: #f8717150; background: var(--bad-soft); text-decoration: line-through; }
 
-  .scopes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .scope { font: 12px var(--mono); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); color: var(--faint); transition: all .3s; }
-  .scope.granted { color: var(--ok); border-color: #34d39950; background: var(--ok-bg); }
-  .scope.missing { color: var(--warn); border-color: #fbbf2450; background: var(--warn-bg); }
-  .scope.refused { color: var(--bad); border-color: #f8717150; background: var(--bad-bg); text-decoration: line-through; }
-
-  .approval {
-    margin-top: 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 16px; padding: 16px;
-    display: grid; grid-template-columns: 1fr auto; gap: 12px 16px; animation: rise .3s ease-out;
-  }
-  .approval .from { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
-  .approval .from::before { content: ""; width: 18px; height: 18px; border-radius: 5px; background: var(--airline); opacity: .85; }
-  .approval .intent { font-size: 15px; color: var(--text); line-height: 1.45; }
-  .ring { width: 64px; height: 64px; position: relative; }
+  /* phone */
+  .phone { margin-top: 10px; width: 100%; max-width: 380px; border-radius: 30px; padding: 10px; background: #050608; border: 1px solid var(--line-2); box-shadow: 0 20px 50px #0008; animation: rise .35s ease-out; }
+  .screen { border-radius: 22px; padding: 12px 12px 14px; background: linear-gradient(160deg, #1b2030, #10131b); }
+  .statusbar { display: flex; justify-content: space-between; align-items: center; font: 600 12px Inter; color: #cfd3dc; padding: 2px 10px 10px; }
+  .island { width: 74px; height: 20px; border-radius: 999px; background: #000; }
+  .notif { background: #ffffff14; backdrop-filter: blur(10px); border-radius: 18px; padding: 13px 14px 14px; }
+  .nhead { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #b9bfcc; text-transform: uppercase; letter-spacing: .04em; }
+  .nhead i { width: 18px; height: 18px; border-radius: 5px; background: var(--airline); }
+  .nhead span { margin-left: auto; text-transform: none; letter-spacing: 0; }
+  .notif > b { display: block; margin: 8px 0 4px; font-size: 15.5px; color: #fff; }
+  .notif p { margin: 0; font-size: 14px; color: #d7dbe3; line-height: 1.45; }
+  .nmeta { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+  .nmeta .kv { color: #b9bfcc; }
+  .ring { width: 54px; height: 54px; position: relative; }
   .ring svg { transform: rotate(-90deg); }
-  .ring circle { fill: none; stroke-width: 5; }
-  .ring .track { stroke: var(--line); }
+  .ring circle { fill: none; stroke-width: 4.5; }
+  .ring .track { stroke: #ffffff1f; }
   .ring .bar { stroke: var(--warn); stroke-linecap: round; transition: stroke .3s; }
-  .ring span { position: absolute; inset: 0; display: grid; place-items: center; font: 600 17px var(--mono); }
-  .actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .actions button { all: unset; cursor: pointer; text-align: center; padding: 11px; border-radius: 10px; font-weight: 600; }
-  .actions .deny { background: var(--panel); border: 1px solid var(--line); }
-  .actions .allow { background: var(--ok); color: #04261a; }
-  .noanswer { grid-column: 1 / -1; color: var(--muted); font-size: 13px; text-align: center; padding: 8px; border: 1px dashed var(--line); border-radius: 10px; }
-  .verdict { grid-column: 1 / -1; font-weight: 600; text-align: center; padding: 9px; border-radius: 10px; }
-  .verdict.approved { background: var(--ok-bg); color: var(--ok); }
-  .verdict.expired, .verdict.denied { background: var(--bad-bg); color: var(--bad); }
+  .ring span { position: absolute; inset: 0; display: grid; place-items: center; font: 600 16px var(--mono); color: #fff; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .actions button { all: unset; cursor: pointer; text-align: center; padding: 11px; border-radius: 12px; font-weight: 600; font-size: 15px; }
+  .actions .deny { background: #ffffff14; color: #fff; }
+  .actions .allow { background: var(--ok); color: #052e1f; }
+  .noanswer { margin-top: 12px; color: #9aa1b0; font-size: 13.5px; text-align: center; padding: 10px; border-radius: 12px; border: 1px dashed #ffffff26; }
+  .verdict { margin-top: 12px; font-weight: 600; text-align: center; padding: 10px; border-radius: 12px; }
+  .verdict.approved { background: #34d39926; color: var(--ok); }
+  .verdict.expired, .verdict.denied { background: #f8717126; color: var(--bad); }
 
-  .receipt { margin-top: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: 12.5px/1.7 var(--mono); }
+  .receipt { margin-top: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: 12.5px/1.75 var(--mono); }
   .receipt .sig { color: var(--ok); }
   .receipt .none { color: var(--bad); }
 
-  .report {
-    margin: 0 28px 24px; padding: 16px 18px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line);
-    animation: rise .3s ease-out;
-  }
-  .report small { display: block; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
-  .error { margin: 0 28px 16px; padding: 12px 16px; border-radius: 12px; background: var(--bad-bg); color: var(--bad); font: 13px var(--mono); }
-
   details { border-top: 1px solid var(--line); }
-  summary { cursor: pointer; padding: 12px 28px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
-  #log { max-height: 220px; overflow-y: auto; padding: 0 28px 16px; font: 11.5px/1.7 var(--mono); color: var(--muted); }
+  summary { cursor: pointer; padding: 12px 32px; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  #log { max-height: 220px; overflow-y: auto; padding: 0 32px 16px; font: 11.5px/1.7 var(--mono); color: var(--muted); }
   #log b { color: var(--text); font-weight: 500; }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1000px) {
+    body { overflow: auto; }
     header { flex-wrap: wrap; padding: 14px 16px; }
     main { grid-template-columns: 1fr; }
     section + section { border-left: 0; border-top: 1px solid var(--line); }
-    .head, #transcript, #trust { padding-left: 16px; padding-right: 16px; }
+    .stage { grid-template-columns: 1fr; padding: 16px; }
+    .party.agent { flex-direction: row; text-align: left; }
+    #transcript, #trust, .trust-head, #outcome { padding-left: 16px; padding-right: 16px; }
   }
 </style>
 </head>
 <body>
 <header>
-  <div class="brand"><b>Handshake</b><span>PACT over a live voice call</span></div>
+  <div class="brand"><div class="mark"><i></i><i></i></div><div><b>Handshake</b><span>PACT over a live voice call</span></div></div>
   <div class="seg" role="group" aria-label="Scenario">
     <button data-scenario="happy" aria-pressed="true">Happy path</button>
     <button data-scenario="unreachable" aria-pressed="false">Owner unreachable</button>
@@ -181,22 +211,31 @@
   </div>
   <label class="toggle"><input type="checkbox" id="voice" checked> Voice</label>
   <button class="start" id="start">Start call</button>
-  <div class="status" id="status"><i></i><span>idle</span></div>
 </header>
 
 <main>
   <section>
-    <div class="head">The call
-      <div class="parties"><span class="a" id="party-airline">Northwind Airways support agent</span><span class="p" id="party-agent">Pocket, Abdul's agent</span></div>
+    <div class="stage">
+      <div class="party airline" id="party-airline">
+        <div class="avatar">N</div>
+        <div class="who"><b>Northwind Airways</b><small>Support agent</small></div>
+        <div class="wave"></div>
+      </div>
+      <div class="link" id="link"><span class="chip" id="chip">ready</span><div class="wire"></div><span class="timer" id="timer">00:00</span></div>
+      <div class="party agent" id="party-agent">
+        <div class="avatar">P</div>
+        <div class="who"><b>Pocket</b><small>Abdul's personal agent</small></div>
+        <div class="wave"></div>
+      </div>
     </div>
-    <div id="transcript"><div class="empty">Pocket is about to call Northwind Airways to move Abdul's Nov 17 flight.</div></div>
-    <div id="footer"></div>
+    <div id="transcript"><div class="empty">Pocket is about to call Northwind Airways to move Abdul's Nov 17 flight from Seattle to Dubai.</div></div>
+    <div id="outcome"></div>
   </section>
 
   <section>
-    <div class="head">Trust layer</div>
+    <div class="trust-head"><div class="label">Trust layer</div><p>Enforced by code. Nothing here is the model's call.</p></div>
     <div id="trust"></div>
-    <details><summary>Audit log</summary><div id="log"></div></details>
+    <details><summary class="label">Audit log</summary><div id="log"></div></details>
   </section>
 </main>
 
@@ -211,11 +250,36 @@ const STEPS = [
   ["receipt", "Signed receipt"],
 ];
 const ALL_SCOPES = ["bookings:read", "bookings:change", "payments:charge"];
+const TOOL_SCOPE = { list_bookings: "bookings:read", get_booking: "bookings:read", search_flights: "bookings:read", quote_change: "bookings:read", change_flight: "bookings:change" };
+const BARS = 7;
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-let scenario = "happy", clockOffset = 0, countdown = null, callTimer = null, startedAt = 0, approvalId = null;
+let scenario = "happy", voiceCall = false, clockOffset = 0, countdown = null, callTimer = null, approvalId = null;
+let requested = [], approvalStatus = null;
+const lastSaid = {};
 
+document.querySelectorAll(".wave").forEach((w) => w.innerHTML = "<i></i>".repeat(BARS));
+
+// ---- speaking indicators ----
+const levels = { agent: 0, airline: 0 };
+const textTalk = { agent: 0, airline: 0 };
+function renderWaves() {
+  const now = performance.now();
+  for (const who of ["agent", "airline"]) {
+    // Voice mode uses the real audio level. Text mode fakes a gentle wave while a line is being revealed.
+    const lvl = voiceCall ? levels[who] : (now < textTalk[who] ? 0.5 + 0.3 * Math.sin(now / 90) : 0);
+    $(`#party-${who}`).classList.toggle("talking", lvl > 0.06);
+    $(`#party-${who} .wave`).querySelectorAll("i").forEach((bar, i) => {
+      const shape = 0.45 + 0.55 * Math.abs(Math.sin(now / 140 + i * 1.3));
+      bar.style.height = `${4 + Math.min(1, lvl) * 24 * shape}px`;
+    });
+  }
+  requestAnimationFrame(renderWaves);
+}
+requestAnimationFrame(renderWaves);
+
+// ---- trust steps ----
 function renderSteps() {
   $("#trust").innerHTML = STEPS.map(([id, title], i) =>
     `<div class="step" id="s-${id}"><div class="dot">${i + 1}</div><div><h3>${title}</h3><div class="body"></div></div></div>`
@@ -228,12 +292,12 @@ function step(id, state, html) {
   if (html !== undefined) el.querySelector(".body").innerHTML = html;
   el.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
-let requested = [];
 function scopesHtml(granted, missing = [], refused = []) {
   const cls = (s) => granted.includes(s) ? "granted" : missing.includes(s) ? "missing" : refused.includes(s) ? "refused" : "";
   return `<div class="scopes">${ALL_SCOPES.map((s) => `<span class="scope ${cls(s)}">${s}</span>`).join("")}</div>`;
 }
 
+// ---- transcript ----
 function add(el) {
   const t = $("#transcript");
   t.querySelector(".empty")?.remove();
@@ -243,54 +307,17 @@ function add(el) {
 function say(speaker, text) {
   const el = document.createElement("div");
   el.className = `msg ${speaker}`;
-  const words = esc(text).split(/\s+/).map((w, i) => `<span class="w" style="animation-delay:${i * 45}ms">${w}</span>`).join(" ");
-  el.innerHTML = `<div class="who">${speaker === "airline" ? "Northwind" : "Pocket"}</div><div class="bubble">${words}</div>`;
+  const words = esc(text).split(/\s+/);
+  el.innerHTML = `<div class="bubble">${words.map((w, i) => `<span class="w" style="animation-delay:${i * 45}ms">${w}</span>`).join(" ")}</div>`;
   add(el);
   lastSaid[speaker] = el;
+  textTalk[speaker] = performance.now() + words.length * 45 + 200;
 }
-const lastSaid = {};
 function heard(by, text) {
   const speaker = by === "airline" ? "agent" : "airline";
   lastSaid[speaker]?.insertAdjacentHTML("beforeend",
     `<div class="heard"><b>${by === "airline" ? "Northwind" : "Pocket"} heard:</b> ${esc(text) || "(nothing)"}</div>`);
   $("#transcript").scrollTop = $("#transcript").scrollHeight;
-}
-
-let listener = null, meterFrame = null;
-async function listen() {
-  listener?.close();
-  const { session, offer } = await (await fetch("/rtc/listen", { method: "POST" })).json();
-  const pc = listener = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] });
-  const ctx = new AudioContext();
-  const meters = [];
-  pc.ontrack = (e) => {
-    const audio = new Audio();
-    audio.srcObject = new MediaStream([e.track]);
-    audio.play();
-    // SFU offers tracks in the order the server asked: Pocket, then Northwind.
-    const who = pc.getTransceivers().indexOf(e.transceiver) === 0 ? "agent" : "airline";
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 512;
-    ctx.createMediaStreamSource(new MediaStream([e.track])).connect(analyser);
-    meters.push([who, analyser, new Uint8Array(analyser.fftSize)]);
-  };
-  await pc.setRemoteDescription(offer);
-  await pc.setLocalDescription(await pc.createAnswer());
-  await new Promise((r) => pc.iceGatheringState === "complete" ? r() : pc.addEventListener("icegatheringstatechange", () => pc.iceGatheringState === "complete" && r()));
-  await fetch("/rtc/answer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session, sdp: pc.localDescription.sdp }) });
-  cancelAnimationFrame(meterFrame);
-  const draw = () => {
-    for (const [who, analyser, buf] of meters) {
-      analyser.getByteTimeDomainData(buf);
-      let peak = 0;
-      for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
-      const el = $(`#party-${who}`);
-      el.classList.toggle("talking", peak > 4);
-      el.style.setProperty("--lvl", `${Math.min(10, peak / 6)}px`);
-    }
-    meterFrame = requestAnimationFrame(draw);
-  };
-  draw();
 }
 function sys(html, tone = "") {
   const el = document.createElement("div");
@@ -298,32 +325,42 @@ function sys(html, tone = "") {
   el.innerHTML = html;
   add(el);
 }
-
-const TOOL_SCOPE = { list_bookings: "bookings:read", get_booking: "bookings:read", search_flights: "bookings:read", quote_change: "bookings:read", change_flight: "bookings:change" };
 function toolLine(e) {
   if (e.side !== "airline") return;
   const r = e.result || {};
-  const args = Object.values(e.args || {}).join(", ");
-  if (r.status === "TASK_STATE_AUTH_REQUIRED") return sys(`${e.name}(${esc(args)}) <b>AUTH_REQUIRED</b>`, "warn");
-  if (r.status === "not_approved") return sys(`${e.name}(${esc(args)}) <b>refused</b>, owner did not approve`, "bad");
-  if (r.error) return sys(`${e.name}(${esc(args)}) <b>${esc(r.error)}</b>`, "bad");
-  sys(`${e.name}(${esc(args)}) <b>ok</b> under ${TOOL_SCOPE[e.name]}`, "ok");
+  const call = `${e.name}(${esc(Object.values(e.args || {}).join(", "))})`;
+  if (r.status === "TASK_STATE_AUTH_REQUIRED") return sys(`${call} <b>AUTH_REQUIRED</b>`, "warn");
+  if (r.status === "not_approved") return sys(`${call} <b>refused</b>, owner did not approve`, "bad");
+  if (r.error) return sys(`${call} <b>${esc(r.error)}</b>`, "bad");
+  sys(`${call} <b>ok</b> under ${TOOL_SCOPE[e.name] || "bookings:read"}`, "ok");
 }
 
+// ---- link + timer ----
+function link(state, text) {
+  $("#link").className = `link ${state}`;
+  $("#chip").textContent = text;
+}
+
+// ---- owner approval (phone) ----
 function approvalCard(e) {
   approvalId = e.approval_id;
   const reachable = scenario !== "unreachable";
-  step("owner", "wait", `<div class="approval" id="approval">
-      <div class="from">Northwind Airways, on Abdul's phone</div>
-      <div class="intent">${esc(e.intent)}<div class="kv" style="margin-top:6px">code <b>${esc(e.user_code)}</b></div></div>
-      <div class="ring"><svg width="64" height="64"><circle class="track" cx="32" cy="32" r="28"/><circle class="bar" cx="32" cy="32" r="28"/></svg><span id="secs"></span></div>
-      ${reachable
-        ? `<div class="actions"><button class="deny" onclick="decide(false)">Deny</button><button class="allow" onclick="decide(true)">Approve</button></div>`
-        : `<div class="noanswer">Abdul isn't picking up</div>`}
-    </div>`);
+  const now = new Date();
+  step("owner", "wait", `<div class="phone" id="approval"><div class="screen">
+      <div class="statusbar"><span>${now.getHours() % 12 || 12}:${String(now.getMinutes()).padStart(2, "0")}</span><span class="island"></span><span>5G</span></div>
+      <div class="notif">
+        <div class="nhead"><i></i>Northwind Airways<span>now</span></div>
+        <b>Pocket wants to change your flight</b>
+        <p>${esc(e.intent)}</p>
+        <div class="nmeta"><span class="kv">code <b>${esc(e.user_code)}</b><br>this change only</span>
+          <div class="ring"><svg width="54" height="54"><circle class="track" cx="27" cy="27" r="23"/><circle class="bar" cx="27" cy="27" r="23"/></svg><span id="secs"></span></div></div>
+        ${reachable
+          ? `<div class="actions"><button class="deny" onclick="decide(false)">Deny</button><button class="allow" onclick="decide(true)">Approve</button></div>`
+          : `<div class="noanswer">Abdul isn't picking up</div>`}
+      </div></div></div>`);
   const total = e.expires_at - (Date.now() / 1000 + clockOffset);
   const bar = document.querySelector("#approval .bar");
-  const C = 2 * Math.PI * 28;
+  const C = 2 * Math.PI * 23;
   bar.style.strokeDasharray = C;
   clearInterval(countdown);
   const tick = () => {
@@ -348,80 +385,142 @@ function receiptHtml(c) {
   return `<div class="receipt">${actions}<div>scopesUsed: ${c.scopesUsed.map(esc).join(", ")}</div>
     <div>grant: ${esc(c.grantId)}</div><div class="sig">ES256 signature verified by Pocket</div></div>`;
 }
-
-function setStatus(live, label) {
-  $("#status").className = `status ${live ? "live" : ""}`;
-  $("#status span").textContent = label;
+function outcomeHtml(c) {
+  if (c.actions.length) {
+    const a = c.actions[0];
+    return `<div class="result ok"><div class="icon">&#10003;</div><h2>Flight changed. $${(a.charged_cents / 100).toFixed(2)} charged.</h2>
+      <p>Abdul approved on his phone. Northwind signed the receipt, Pocket verified it.</p></div>`;
+  }
+  const why = scenario === "overreach" ? "Pocket claimed approval it didn't have. The gate held."
+    : approvalStatus === "denied" ? "Abdul said no."
+    : approvalStatus === "expired" ? "Abdul didn't answer, so the request expired."
+    : "No approval was requested.";
+  return `<div class="result none"><div class="icon">&times;</div><h2>Nothing changed. Nothing charged.</h2><p>${why} The signed receipt has no actions.</p></div>`;
 }
 
+// ---- events ----
 function handle(e) {
   clockOffset = e.t - Date.now() / 1000;
-  const log = $("#log");
   const { kind, t, ...rest } = e;
+  const log = $("#log");
   log.insertAdjacentHTML("beforeend", `<div>${new Date(t * 1000).toISOString().slice(11, 23)} <b>${kind}</b> ${esc(JSON.stringify(rest)).slice(0, 220)}</div>`);
   log.scrollTop = log.scrollHeight;
 
   switch (kind) {
-    case "call_started":
-      $("#transcript").innerHTML = ""; $("#footer").innerHTML = ""; log.innerHTML = log.lastElementChild.outerHTML;
-      renderSteps(); clearInterval(countdown); approvalId = null;
-      scenario = e.scenario; selectScenario(scenario);
-      startedAt = Date.now(); clearInterval(callTimer);
-      callTimer = setInterval(() => setStatus(true, `live ${new Date(Date.now() - startedAt).toISOString().slice(14, 19)}`), 250);
+    case "call_started": {
+      $("#transcript").innerHTML = ""; $("#outcome").innerHTML = ""; log.innerHTML = log.lastElementChild.outerHTML;
+      renderSteps(); clearInterval(countdown); approvalId = null; approvalStatus = null;
+      selectScenario(e.scenario); voiceCall = e.voice;
+      link("live", "registering");
+      const start = Date.now();
+      clearInterval(callTimer);
+      $("#timer").classList.add("live");
+      callTimer = setInterval(() => $("#timer").textContent = new Date(Date.now() - start).toISOString().slice(14, 19), 250);
       $("#start").disabled = true;
       break;
+    }
     case "registered": {
       const host = new URL(e.agent.iss).host;
       step("identity", "done", `<div class="kv">platform <b>${esc(host)}</b> &middot; ES256 JWT &middot; lives <b>${e.agent.exp - e.agent.iat}s</b></div>`);
-      step("delegation", "done", `<div class="kv">Abdul granted Pocket <b>read-only</b> access earlier</div>${scopesHtml(e.scopes)}`);
+      step("delegation", "done", `<div class="kv">Abdul gave Pocket <b>read-only</b> access earlier</div>${scopesHtml(e.scopes)}`);
       break;
     }
-    case "line_open": listen(); break;
+    case "call_code_issued": link("live", `code ${e.code} issued`); break;
+    case "line_open": link("live", "dialing"); listen(); break;
     case "call_bound":
+      link("bound", `bound · ${e.code}`);
       step("binding", "done", e.in_band
         ? `<div class="kv">one-time code <b>${esc(e.code)}</b> sent as keypad tones, decoded by Northwind, matched to the verified session</div>`
-        : `<div class="kv">one-time code <b>${esc(e.code)}</b> sent on the call, matched to the verified session</div>`);
+        : `<div class="kv">one-time code <b>${esc(e.code)}</b> matched to the verified session</div>`);
       sys(e.in_band ? `keypad tones decoded: <b>${esc(e.code)}</b> &middot; call bound` : `call bound with code <b>${esc(e.code)}</b>`);
       break;
-    case "heard": heard(e.by, e.text); break;
     case "caller_classified":
       step("caller", "done", `<div class="kv">AI agent, <b>declared</b> &middot; detector: ${esc(e.detector)}</div>`);
       break;
     case "say": say(e.speaker, e.text); break;
+    case "heard": heard(e.by, e.text); break;
     case "tool": toolLine(e); break;
     case "auth_required":
       requested = Object.keys(e.scopes);
-      step("stepup", "wait", `<div class="kv">${esc(e.intent)}</div>${scopesHtml(["bookings:read"], Object.keys(e.scopes))}`);
+      step("stepup", "wait", `<div class="kv">${esc(e.intent)}</div>${scopesHtml(["bookings:read"], requested)}`);
       break;
     case "owner_notified": approvalCard(e); break;
     case "approval_resolved": {
       clearInterval(countdown);
+      approvalStatus = e.status;
       const ok = e.status === "approved";
       document.querySelector("#approval .actions, #approval .noanswer")?.remove();
-      document.querySelector("#approval")?.insertAdjacentHTML("beforeend",
+      document.querySelector("#approval .notif")?.insertAdjacentHTML("beforeend",
         `<div class="verdict ${e.status}">${ok ? "Approved by Abdul" : e.status === "denied" ? "Denied by Abdul" : "No answer. Expired."}</div>`);
       $("#s-owner").classList.replace("wait", ok ? "done" : "fail");
+      const ring = document.querySelector("#approval .ring");
+      if (ring) {
+        ring.querySelector(".bar").style.stroke = ok ? "var(--ok)" : "var(--bad)";
+        ring.querySelector(".bar").style.strokeDashoffset = ok ? 0 : ring.querySelector(".bar").style.strokeDasharray;
+        $("#secs").innerHTML = ok ? "&#10003;" : "0";
+      }
       step("stepup", ok ? "done" : "fail", $("#s-stepup .body").innerHTML.replace(/<div class="scopes">[\s\S]*<\/div>$/, "") + scopesHtml(e.scopes, [], ok ? [] : requested));
       sys(ok ? "owner approved on their phone, new delegation token presented" : "owner approval expired, no new permissions", ok ? "ok" : "bad");
       break;
     }
     case "receipt":
       step("receipt", e.claims.actions.length ? "done" : "fail", receiptHtml(e.claims));
+      $("#outcome").innerHTML = outcomeHtml(e.claims);
+      $("#transcript").scrollTop = $("#transcript").scrollHeight;
       break;
     case "report":
-      $("#footer").insertAdjacentHTML("beforeend", `<div class="report"><small>Pocket's report to Abdul</small>${esc(e.text)}</div>`);
+      $("#outcome").insertAdjacentHTML("beforeend", `<div class="report"><span class="label">Pocket's report to Abdul, from the receipt</span>${esc(e.text)}</div>`);
+      $("#transcript").scrollTop = $("#transcript").scrollHeight;
       break;
     case "error":
-      $("#footer").insertAdjacentHTML("beforeend", `<div class="error">${esc(e.message)}</div>`);
+      $("#outcome").insertAdjacentHTML("beforeend", `<div class="error">${esc(e.message)}</div>`);
       break;
     case "call_ended":
-      listener?.close(); listener = null; cancelAnimationFrame(meterFrame);
-      document.querySelectorAll(".parties span").forEach((el) => el.classList.remove("talking"));
-      clearInterval(callTimer); setStatus(false, "ended"); $("#start").disabled = false;
+      listener?.close(); listener = null;
+      levels.agent = levels.airline = 0;
+      clearInterval(callTimer); $("#timer").classList.remove("live");
+      if (!$("#link").classList.contains("bound")) link("", "call ended");
+      else $("#chip").textContent = "call ended";
+      $("#start").disabled = false;
       break;
   }
 }
 
+// ---- listening in over Cloudflare Realtime ----
+let listener = null;
+async function listen() {
+  listener?.close();
+  const { session, offer } = await (await fetch("/rtc/listen", { method: "POST" })).json();
+  const pc = listener = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.cloudflare.com:3478" }] });
+  const ctx = new AudioContext();
+  pc.ontrack = (e) => {
+    const stream = new MediaStream([e.track]);
+    const audio = new Audio();
+    audio.srcObject = stream;
+    audio.play();
+    // The SFU offers tracks in the order the server asked for them: Pocket, then Northwind.
+    const who = pc.getTransceivers().indexOf(e.transceiver) === 0 ? "agent" : "airline";
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    ctx.createMediaStreamSource(stream).connect(analyser);
+    const buf = new Uint8Array(analyser.fftSize);
+    const read = () => {
+      if (pc !== listener) return;
+      analyser.getByteTimeDomainData(buf);
+      let peak = 0;
+      for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
+      levels[who] = peak / 64;
+      requestAnimationFrame(read);
+    };
+    read();
+  };
+  await pc.setRemoteDescription(offer);
+  await pc.setLocalDescription(await pc.createAnswer());
+  await new Promise((r) => pc.iceGatheringState === "complete" ? r() : pc.addEventListener("icegatheringstatechange", () => pc.iceGatheringState === "complete" && r()));
+  await fetch("/rtc/answer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session, sdp: pc.localDescription.sdp }) });
+}
+
+// ---- controls ----
 function selectScenario(s) {
   scenario = s;
   document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.scenario === s));
@@ -429,14 +528,15 @@ function selectScenario(s) {
 document.querySelectorAll(".seg button").forEach((b) => b.onclick = () => selectScenario(b.dataset.scenario));
 $("#start").onclick = () => fetch("/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario, voice: $("#voice").checked }) });
 
-// Recording shortcuts: 1/2/3 pick a scenario, Enter starts, A approves, D denies.
+// Recording shortcuts: 1/2/3 pick a scenario, V toggles voice, Enter starts, A approves, D denies.
 document.addEventListener("keydown", (e) => {
-  if (e.target.closest("input, textarea")) return;
   const pick = { 1: "happy", 2: "unreachable", 3: "overreach" }[e.key];
   if (pick) selectScenario(pick);
+  const k = e.key.toLowerCase();
+  if (k === "v") $("#voice").checked = !$("#voice").checked;
   if (e.key === "Enter" && !$("#start").disabled) $("#start").click();
-  if (e.key.toLowerCase() === "a" && scenario !== "unreachable") decide(true);
-  if (e.key.toLowerCase() === "d") decide(false);
+  if (k === "a" && scenario !== "unreachable") decide(true);
+  if (k === "d") decide(false);
 });
 
 function connect() {
