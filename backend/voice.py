@@ -120,6 +120,8 @@ class VoiceLine:
         return dtmf.decode(await self._transmit("agent", dtmf.tones(code)))
 
     async def speak(self, speaker: str, text: str) -> str:
+        if not text.strip():  # a model can end a turn without saying anything; aura-1 rejects empty text
+            return ""
         pcm = await tts(text, VOICES[speaker])
         return await stt(await self._transmit(speaker, pcm))
 
