@@ -13,11 +13,11 @@ TOOLS = [
     llm.tool("get_booking", "Look up the caller's booking.", pnr="Booking reference"),
     llm.tool("search_flights", "List flights on a route for one day.",
              origin="IATA code", destination="IATA code", date="YYYY-MM-DD"),
-    llm.tool("quote_change", "Price moving the booking to another flight. Changes nothing.",
-             pnr="Booking reference", flight_id="flight_id from search_flights"),
-    llm.tool("change_flight", "Move the booking to another flight and charge the fare difference. "
+    llm.tool("quote_change", "Price moving the customer's booking to another flight. Changes nothing.",
+             flight_id="flight_id from search_flights"),
+    llm.tool("change_flight", "Move the customer's booking to another flight and charge the fare difference. "
              "Only after you have stated the exact change and the caller confirmed it.",
-             pnr="Booking reference", flight_id="flight_id from search_flights"),
+             flight_id="flight_id from search_flights"),
 ]
 
 PROMPT = """You are the phone support agent for Northwind Airways. You are on a live voice call.
@@ -34,8 +34,7 @@ How to behave:
   "Northwind 232".
 - You already greeted the caller. You are talking to the agent, not to the customer.
 - Booking references get garbled on calls, so always call list_bookings first and match the booking
-  the caller describes. Don't make them spell it. In every tool call, use the pnr and flight_id
-  exactly as your own tools returned them, never as you heard them.
+  the caller describes. Don't make them spell it. Use flight_id exactly as search_flights returned it.
 - Do every lookup before you speak: list_bookings, search_flights, quote_change, all in one turn.
   Never say you're about to look something up. Come back with the best matching option and its price.
   Use the airport codes and dates from the booking when you search.
@@ -81,16 +80,16 @@ class BusinessAgent:
                 return {"error": "not permitted", "missing_scopes": sorted(e.missing_scopes)}
         return handler
 
-    async def change_flight(self, pnr: str, flight_id: str) -> dict:
+    async def change_flight(self, flight_id: str) -> dict:
         try:
-            quote = airline.quote_change(self.session, pnr, flight_id)
+            quote = airline.quote_change(self.session, flight_id)
             if prior := self._last_approval(flight_id):
                 if prior.status == "pending":
                     return {"status": "TASK_STATE_AUTH_REQUIRED", "note": "still waiting on the owner's device"}
                 if prior.status in ("denied", "expired"):
                     return {"status": "not_approved", "reason": f"owner approval {prior.status}",
                             "booking_changed": False, "charged_usd": 0}
-            return airline.change_flight(self.session, pnr, flight_id)
+            return airline.change_flight(self.session, flight_id)
         except (airline.NotFound, airline.InvalidChange) as e:
             return {"error": str(e)}
         except AuthRequired as needed:

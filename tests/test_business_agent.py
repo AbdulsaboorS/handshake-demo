@@ -29,21 +29,21 @@ def test_greeting_states_verified_access(agent):
 
 def test_one_approval_request_per_change(agent):
     business, sent = agent
-    first = asyncio.run(business.change_flight(airline.PNR, NEW_FLIGHT))
+    first = asyncio.run(business.change_flight(NEW_FLIGHT))
     assert first["status"] == "TASK_STATE_AUTH_REQUIRED"
     assert "$84.00" in first["owner_will_see"]
 
-    again = asyncio.run(business.change_flight(airline.PNR, NEW_FLIGHT))
+    again = asyncio.run(business.change_flight(NEW_FLIGHT))
     assert again["note"] == "still waiting on the owner's device"
     assert len(sent) == 1
 
 
 def test_no_re_asking_after_expiry(agent):
     business, sent = agent
-    asyncio.run(business.change_flight(airline.PNR, NEW_FLIGHT))
+    asyncio.run(business.change_flight(NEW_FLIGHT))
     assert asyncio.run(business.provider.wait(sent[0].id)) is None
 
-    after = asyncio.run(business.change_flight(airline.PNR, NEW_FLIGHT))
+    after = asyncio.run(business.change_flight(NEW_FLIGHT))
     assert after["status"] == "not_approved"
     assert len(sent) == 1
     assert airline.BOOKINGS[airline.PNR].charges == []

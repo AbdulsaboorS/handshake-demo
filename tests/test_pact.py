@@ -25,7 +25,7 @@ def test_read_scope_allows_lookup(world):
     _, _, session = world
     booking = airline.get_booking(session, airline.PNR)
     assert booking["segments"][0]["departs"] == "Tue Nov 17, 4:05 PM"
-    assert airline.quote_change(session, airline.PNR, NEW_FLIGHT)["fare_difference_usd"] == 84
+    assert airline.quote_change(session, NEW_FLIGHT)["fare_difference_usd"] == 84
 
 
 def test_untrusted_platform_rejected(world):
@@ -64,7 +64,7 @@ def test_cannot_see_someone_elses_booking(world):
 def test_change_needs_step_up_then_succeeds(world):
     provider, _, session = world
     with pytest.raises(AuthRequired) as e:
-        airline.change_flight(session, airline.PNR, NEW_FLIGHT)
+        airline.change_flight(session, NEW_FLIGHT)
     assert e.value.missing_scopes == {"bookings:change", "payments:charge"}
 
     approval = provider.request_approval(session, e.value, "Move NW230 to NW232, $84")
@@ -76,18 +76,18 @@ def test_change_needs_step_up_then_succeeds(world):
         return await waiter
 
     provider.upgrade(session, asyncio.run(owner_approves()))
-    result = airline.change_flight(session, airline.PNR, NEW_FLIGHT)
+    result = airline.change_flight(session, NEW_FLIGHT)
     assert result["charged_usd"] == 84
 
     receipt = verify_receipt(provider.receipt(session), provider.signer.public_key)
     assert receipt["actions"][0]["to"] == NEW_FLIGHT
-    assert receipt["scopesUsed"] == ["bookings:change", "payments:charge"]
+    assert receipt["scopesUsed"] == ["bookings:change", "bookings:read", "payments:charge"]
 
 
 def test_approval_is_bound_to_the_exact_change(world):
     provider, _, session = world
     with pytest.raises(AuthRequired) as e:
-        airline.change_flight(session, airline.PNR, NEW_FLIGHT)
+        airline.change_flight(session, NEW_FLIGHT)
     approval = provider.request_approval(session, e.value, "")
 
     async def run():
@@ -99,20 +99,20 @@ def test_approval_is_bound_to_the_exact_change(world):
     provider.upgrade(session, asyncio.run(run()))
     # Scopes are granted now, but only for NW232. A pricier flight still needs the owner.
     with pytest.raises(AuthRequired):
-        airline.change_flight(session, airline.PNR, "NW234-20261117")
+        airline.change_flight(session, "NW234-20261117")
 
 
 def test_owner_unreachable_changes_nothing(world):
     provider, _, session = world
     with pytest.raises(AuthRequired) as e:
-        airline.change_flight(session, airline.PNR, NEW_FLIGHT)
+        airline.change_flight(session, NEW_FLIGHT)
     approval = provider.request_approval(session, e.value, "")
 
     assert asyncio.run(provider.wait(approval.id)) is None
     assert approval.status == "expired"
     assert provider.resolve(approval.id, approved=True).status == "expired"  # too late
     with pytest.raises(AuthRequired):
-        airline.change_flight(session, airline.PNR, NEW_FLIGHT)
+        airline.change_flight(session, NEW_FLIGHT)
     assert airline.BOOKINGS[airline.PNR].charges == []
 
     receipt = verify_receipt(provider.receipt(session), provider.signer.public_key)
@@ -122,7 +122,12 @@ def test_owner_unreachable_changes_nothing(world):
 def test_bad_connection_rejected_before_asking_owner(world):
     _, _, session = world
     with pytest.raises(airline.InvalidChange):
-        airline.quote_change(session, airline.PNR, "NW230-20261118")
+        airline.quote_change(session, "NW230-20261118")
+
+
+def test_booking_found_from_flight_not_from_model(world):
+    _, _, session = world
+    assert airline.booking_for_flight(session, NEW_FLIGHT) == airline.PNR
 
 
 def test_call_code_is_single_use(world):

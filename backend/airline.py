@@ -115,6 +115,19 @@ def list_bookings(session: CallerSession) -> list[dict]:
             for b in BOOKINGS.values() if b.owner == session.user]
 
 
+def booking_for_flight(session: CallerSession, flight_id: str) -> str:
+    """The customer's booking this flight would replace a segment on, so the model never has to copy a PNR."""
+    session.require("bookings:read")
+    new = next((f for f in SCHEDULE if f.id == flight_id), None)
+    if new is None:
+        raise NotFound(f"no flight {flight_id}")
+    matches = [b.pnr for b in BOOKINGS.values() if b.owner == session.user
+               and any((s.origin, s.destination) == (new.origin, new.destination) for s in b.segments)]
+    if len(matches) != 1:
+        raise InvalidChange(f"{len(matches)} bookings could take {new.number}, ask which one")
+    return matches[0]
+
+
 def get_booking(session: CallerSession, pnr: str) -> dict:
     session.require("bookings:read")
     b = _owned_booking(session, pnr)
@@ -128,9 +141,9 @@ def search_flights(session: CallerSession, origin: str, destination: str, date: 
             if (f.origin, f.destination) == (origin.upper(), destination.upper()) and f.departs.date() == day]
 
 
-def quote_change(session: CallerSession, pnr: str, flight_id: str) -> dict:
+def quote_change(session: CallerSession, flight_id: str) -> dict:
     session.require("bookings:read")
-    b = _owned_booking(session, pnr)
+    b = _owned_booking(session, booking_for_flight(session, flight_id))
     i, new, diff = _plan_change(b, flight_id)
     return {"pnr": b.pnr, "from": _flight_view(b.segments[i]), "to": _flight_view(new), "fare_difference_usd": diff / 100}
 
@@ -139,9 +152,9 @@ def change_detail(pnr: str, flight_id: str, amount_cents: int) -> dict:
     return {"type": "flight_change", "pnr": pnr.upper(), "flight_id": flight_id, "amount_cents": amount_cents}
 
 
-def change_flight(session: CallerSession, pnr: str, flight_id: str) -> dict:
+def change_flight(session: CallerSession, flight_id: str) -> dict:
     """Charge and rebook together, so there is never a charge without a change or the reverse."""
-    b = _owned_booking(session, pnr)
+    b = _owned_booking(session, booking_for_flight(session, flight_id))
     i, new, diff = _plan_change(b, flight_id)
     scopes = ("bookings:change", "payments:charge") if diff else ("bookings:change",)
     session.require(*scopes, detail=change_detail(b.pnr, new.id, diff))
