@@ -148,7 +148,7 @@ if __name__ == "__main__":
     import argparse
     import json
 
-    parser = argparse.ArgumentParser(description="Run one call in text mode.")
+    parser = argparse.ArgumentParser(description="Run one call from the terminal.")
     parser.add_argument("--overreach", action="store_true", help="personal agent claims approval it doesn't have")
     parser.add_argument("--approve-after", type=float, help="owner approves after N seconds (default: never)")
     parser.add_argument("--voice", action="store_true", help="run the call over Cloudflare Realtime")

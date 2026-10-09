@@ -21,60 +21,59 @@ and receipt signing live in `backend/pact.py` and are never decided by a model. 
 airline tool goes through a scope check first. A model saying "my owner approved this" changes nothing.
 
 ## Flow
-1. Personal agent pre-registers over HTTPS: sends its agent JWT (ES256, `iss`/`sub`/`aud`, exp <= 300s)
-   and delegation token (`scope: bookings:read`, `grant_id`). Gets back a one-time call code.
-2. Personal agent joins the call and sends the code as DTMF tones. Business matches the code to the
-   verified session. This is the voice binding, our actual contribution (write it up in PROTOCOL.md,
-   including what changes on a real phone line: caller ID, 8kHz audio, noisy DTMF).
-3. Detection step runs and is labeled as a stand-in for fleming-1. Do not pretend it is a real classifier.
-4. Agent reads booking and searches alternatives under `bookings:read`.
-5. Business agent states intent out loud: flight, date, old time, new time, fare difference.
-6. Change needs `bookings:change` + `payments:charge`, so it returns `TASK_STATE_AUTH_REQUIRED` with
-   `pact.missingScopes`. Owner gets a link + code on their phone (`ui/approve.html`), countdown running.
-7. Approve: new delegation token, change executes, `pact.receipt` (JWS: grantId, user, scopesUsed,
-   actions, timestamp) read back. Timeout: decline, no charge, receipt with `actions: []`.
-8. Stretch: overreach beat. Personal agent claims approval it doesn't have, the gate refuses.
+1. Pocket registers before dialing: agent JWT (ES256, exp <= 300s) + delegation token (`bookings:read`).
+   Gets a one-time call code (6 digits, 120s, single use).
+2. Voice line opens. Pocket plays the code as in-band DTMF. Northwind decodes it and redeems it. This
+   is the voice binding, the actual contribution. Spec in PROTOCOL.md.
+3. Caller classification is a labeled stand-in for fleming-1. Never pretend it's a real classifier.
+4. Northwind greets with a code-built line stating verified access, then the LLMs converse.
+5. `change_flight` needs `bookings:change` + `payments:charge`, so it raises AUTH_REQUIRED. The owner
+   is notified at once (UI phone card, `/approve`, optional ntfy push), countdown running. Approvals
+   carry `authorization_details` bound to the exact flight and amount. One request per change.
+6. Approved: new delegation token, change executes. Expired/denied: nothing changes.
+7. Signed receipt. Pocket writes its report to the owner from the verified receipt, not from memory.
+Scenarios: happy, unreachable (owner never answers), overreach (Pocket lies about approval).
 
 ## Stack
-- Python 3.12, FastAPI, uvicorn, httpx, PyJWT[crypto]. No agent frameworks. Managed with `uv`.
-- Cloudflare Workers AI for everything model-shaped, one token:
-  - LLM: `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (function calling). Swap via `LLM_MODEL`.
-    Speech goes through a `say` tool (Llama always reaches for a tool). gpt-oss-120b leaks
-    `<|say|>` tokens on Workers AI, don't use it.
-  - STT: `@cf/deepgram/flux` (built-in turn detection) or `@cf/deepgram/nova-3`.
-  - TTS: `@cf/deepgram/aura-1`.
-- Cloudflare Realtime (WebRTC SFU) carries the call. Agents are WebRTC peers via `aiortc`, the UI
-  joins as a listener. Fallback if Realtime fights back: direct aiortc peer-to-peer, same code above it.
-  No paid telephony. Zero cost is a constraint.
-- `cloudflared` quick tunnel so the owner's phone can open the approval page.
-- Text mode always works without voice. Keep it that way, it is the fallback for recording.
+- Python 3.12, FastAPI, uvicorn, httpx, PyJWT[crypto], aiortc, numpy. No agent frameworks. `uv`.
+- Cloudflare Workers AI, one token:
+  - LLM `@cf/meta/llama-3.3-70b-instruct-fp8-fast`. Speech goes through a `say` tool because Llama
+    always reaches for a tool. gpt-oss-120b leaks `<|say|>` tokens on Workers AI, don't use it.
+  - STT `@cf/deepgram/nova-3` (REST, 16k wav, ~0.35s warm; first call after idle can take ~20s).
+  - TTS `@cf/deepgram/aura-1` (linear16, 48kHz, raw). Voices: airline asteria, Pocket orion.
+- Cloudflare Realtime SFU carries the call. Each party is an aiortc peer with its own session,
+  publishing one track and subscribing to the other. Wait for `connected` before subscribing.
+  Each side endpoints incoming audio by energy (`Ear`) and transcribes it, so agents only get what
+  they actually heard. The browser joins as a listener; the server opens its session (token stays here).
+- Zero cost is a constraint. No paid telephony.
+- Text mode always works without voice. It's the fallback for recording.
 
 ## Layout
 ```
-backend/main.py            FastAPI app, websocket events to UI, approval endpoints, call signaling
-backend/pact.py            keys, agent JWT, delegation tokens, scopes, AUTH_REQUIRED, receipts, call codes
-backend/llm.py             Workers AI client (chat + tools), the only place that talks to models
-backend/call.py            one call end to end, transport-agnostic (`speak` hook); CLI: `python -m backend.call`
-backend/personal_agent.py  caller loop: goal -> register -> call -> converse -> report back to owner
-backend/business_agent.py  receiver loop: bind call -> detect -> read -> intent -> step-up -> execute
-backend/airline.py         mock airline: get_booking, search_flights, change_flight, charge_fare_difference
-backend/voice.py           WebRTC call: audio frames <-> STT/TTS, DTMF, turn-taking
-ui/index.html              split view: live transcript, protocol events, mode toggle (happy / unreachable)
-ui/approve.html            phone approval page with countdown
-demo/script.md             video beats, about 90 seconds total
-PROTOCOL.md                "Voice binding for PACT": RFC-lite proposal, maps to PAP concepts too
+backend/pact.py            tokens, scopes, AUTH_REQUIRED, approvals, receipts, call codes
+backend/airline.py         mock airline; every function checks the caller's session itself
+backend/business_agent.py  Northwind's agent: tools, approval requests, code-built greeting
+backend/personal_agent.py  Pocket: converses, can't grant itself anything, reports from the receipt
+backend/call.py            one call end to end over a TextLine or VoiceLine; CLI entry point
+backend/llm.py             Workers AI chat + tool loop, retry helper
+backend/voice.py           VoiceLine: TTS, STT, Ear endpointing, DTMF send, browser listener session
+backend/realtime.py        Cloudflare Realtime API + aiortc Peer and outbound audio track
+backend/dtmf.py            DTMF tone generation and Goertzel decoding
+backend/main.py            FastAPI: UI, websocket events (audit log), approvals, listener endpoints
+ui/index.html              recording UI;  ui/approve.html  the owner's phone page
+PROTOCOL.md                "Voice binding for PACT";  demo/script.md  video beats
 ```
-Seed data lives inline in `airline.py`. Fictional airline and passenger. No real PNRs or names.
+Fictional airline and passenger. No real PNRs or names.
 
 ## Env (`.env`, never committed; template in `.env.example`)
 `CF_ACCOUNT_ID`, `CF_API_TOKEN`, `LLM_MODEL`, `CF_REALTIME_APP_ID`, `CF_REALTIME_APP_TOKEN`,
-`PUBLIC_URL` (cloudflared), `APPROVAL_TIMEOUT_S`.
+`PUBLIC_URL` (cloudflared tunnel), `NTFY_TOPIC` (optional push), `APPROVAL_TIMEOUT_S`.
 
 ## Run
 ```
 uv sync
 uv run pytest -q                                   # gate tests
-uv run python -m backend.call --approve-after 3    # text mode; omit flag = owner unreachable; --overreach
+uv run python -m backend.call --approve-after 3    # omit flag = owner unreachable; --overreach; --voice
 uv run uvicorn backend.main:app --reload --timeout-graceful-shutdown 1 --port 8000
 ```
 
