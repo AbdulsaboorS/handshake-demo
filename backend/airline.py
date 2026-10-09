@@ -4,6 +4,7 @@ Every function takes the caller's verified PACT session and checks scopes itself
 to a booking change that skips the gate.
 """
 
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -86,7 +87,7 @@ def _flight_view(f: Flight) -> dict:
 
 
 def _owned_booking(session: CallerSession, pnr: str) -> Booking:
-    booking = BOOKINGS.get(pnr.upper())
+    booking = BOOKINGS.get(re.sub(r"[^A-Z0-9]", "", pnr.upper()))  # transcripts arrive as "K 7 X Q 2 M"
     # Same error whether it doesn't exist or isn't theirs, so a caller can't probe for PNRs.
     if booking is None or booking.owner != session.user:
         raise NotFound(f"no booking {pnr} for this customer")
@@ -106,6 +107,12 @@ def _plan_change(booking: Booking, flight_id: str) -> tuple[int, Flight, int]:
     if i + 1 < len(booking.segments) and booking.segments[i + 1].departs - new.arrives < MIN_CONNECTION:
         raise InvalidChange(f"{new.number} arrives too late to connect to {booking.segments[i + 1].number}")
     return i, new, max(0, new.fare_cents - old.fare_cents)
+
+
+def list_bookings(session: CallerSession) -> list[dict]:
+    session.require("bookings:read")
+    return [{"pnr": b.pnr, "segments": [_flight_view(s) for s in b.segments]}
+            for b in BOOKINGS.values() if b.owner == session.user]
 
 
 def get_booking(session: CallerSession, pnr: str) -> dict:

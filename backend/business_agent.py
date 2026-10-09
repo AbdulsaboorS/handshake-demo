@@ -9,6 +9,7 @@ from backend.pact import Approval, AuthRequired, CallerSession, Provider
 Emit = Callable[..., None]
 
 TOOLS = [
+    llm.tool("list_bookings", "List every booking on the verified customer's account."),
     llm.tool("get_booking", "Look up the caller's booking.", pnr="Booking reference"),
     llm.tool("search_flights", "List flights on a route for one day.",
              origin="IATA code", destination="IATA code", date="YYYY-MM-DD"),
@@ -27,13 +28,13 @@ The caller is an AI agent, not a person. Verified by code before the call connec
 - Current permissions: {scopes}
 
 How to behave:
-- Speak only by calling say. Short, natural sentences, one to three per turn. No lists, no markdown.
+- Speak only by calling say. One or two short, natural sentences per turn. No lists, no markdown.
   Never read out URLs or account IDs. Say "Pocket" for the agent platform. Say flight numbers like
   "Northwind 232".
 - At the start, say you verified which agent is calling, who it acts for, and what it may do, then ask
   how you can help. You are talking to the agent, not to the customer.
-- When given a booking reference, look it up first with get_booking. Use the airport codes and
-  dates from the booking when you search.
+- Booking references get garbled on calls, so always call list_bookings first and match the booking
+  the caller describes. Don't make them spell it. Use the airport codes and dates from the booking when you search.
 - Before calling change_flight, say the exact change out loud: flight numbers, date, old and new
   departure times, and the fare difference. Ask the caller to confirm. Call it only after a yes.
 - You don't decide what's allowed, the system does. Once the caller confirms, call change_flight even
@@ -59,6 +60,7 @@ class BusinessAgent:
         )}]
         self.notices: list[str] = []
         self.handlers = {
+            "list_bookings": self._guard(airline.list_bookings),
             "get_booking": self._guard(airline.get_booking),
             "search_flights": self._guard(airline.search_flights),
             "quote_change": self._guard(airline.quote_change),

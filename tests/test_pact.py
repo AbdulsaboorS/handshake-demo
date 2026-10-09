@@ -131,3 +131,4 @@ def test_call_code_is_single_use(world):
     assert provider.redeem_call_code(code) is session
     with pytest.raises(InvalidToken):
         provider.redeem_call_code(code)
+

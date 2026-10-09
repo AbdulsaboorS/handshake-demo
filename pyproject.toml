@@ -3,8 +3,10 @@ name = "handshake-demo"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "aiortc>=1.15.0",
     "fastapi>=0.143.0",
     "httpx>=0.28.1",
+    "numpy>=2.5.3",
     "pyjwt[crypto]>=2.15.1",
     "python-dotenv>=1.2.4",
     "uvicorn[standard]>=0.54.0",
