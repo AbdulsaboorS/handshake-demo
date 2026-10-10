@@ -6,6 +6,7 @@ other side's text for free.
 import asyncio
 import io
 import os
+import time
 import wave
 from collections import deque
 
@@ -109,21 +110,33 @@ class VoiceLine:
     def _other(self, speaker: str) -> str:
         return "airline" if speaker == "agent" else "agent"
 
-    async def _transmit(self, speaker: str, pcm: np.ndarray) -> np.ndarray:
+    async def _transmit(self, speaker: str, pcm: np.ndarray, timing: dict) -> np.ndarray:
         ear = self.ears[self._other(speaker)]
         while not ear.utterances.empty():
             ear.utterances.get_nowait()
+        timing["play_start"] = time.time()
         await self.peers[speaker].mouth.play(pcm)
-        return await ear.collect(timeout=END_OF_TURN_S + 5)
+        timing["play_end"] = time.time()
+        heard = await ear.collect(timeout=END_OF_TURN_S + 5)
+        timing["endpoint_s"] = time.time() - timing["play_end"]
+        return heard
 
     async def send_code(self, code: str) -> str:
-        return dtmf.decode(await self._transmit("agent", dtmf.tones(code)))
+        return dtmf.decode(await self._transmit("agent", dtmf.tones(code), {}))
 
-    async def speak(self, speaker: str, text: str) -> str:
+    async def speak(self, speaker: str, text: str) -> tuple[str, dict]:
+        """Returns what the other side heard, and where the time went (wall clock, for evals)."""
         if not text.strip():  # a model can end a turn without saying anything; aura-1 rejects empty text
-            return ""
+            return "", {}
+        timing = {}
+        t = time.time()
         pcm = await tts(text, VOICES[speaker])
-        return await stt(await self._transmit(speaker, pcm))
+        timing["tts_s"] = time.time() - t
+        audio = await self._transmit(speaker, pcm, timing)
+        t = time.time()
+        heard = await stt(audio)
+        timing["stt_s"] = time.time() - t
+        return heard, timing
 
     async def close(self) -> None:
         await asyncio.gather(*(p.leave() for p in self.peers.values()))

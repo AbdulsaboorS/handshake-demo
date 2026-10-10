@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import time
 from collections.abc import Awaitable, Callable
 
 import httpx
@@ -65,13 +66,16 @@ async def run_turn(
     tools: list[dict],
     handlers: dict[str, Handler],
     on_tool: Callable[[str, dict, object], None],
+    on_round: Callable[[float], None],
 ) -> str:
     """Let the model call tools until it says something, append everything to messages, return the line.
 
     Speech goes through a `say` tool because Llama on Workers AI reaches for a tool whenever any are
     offered. Making speech a tool turns that habit into a reliable end-of-turn signal."""
     for _ in range(MAX_TOOL_ROUNDS):
+        t = time.time()
         msg = await chat(messages, [*tools, SAY])
+        on_round(time.time() - t)
         calls = msg.get("tool_calls") or []
         messages.append({"role": "assistant", "content": msg.get("content") or "", **({"tool_calls": calls} if calls else {})})
         if not calls:

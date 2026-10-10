@@ -124,4 +124,5 @@ class BusinessAgent:
         self.messages.append({"role": "user", "content": "\n".join([*self.notices, heard])})
         self.notices.clear()
         on_tool = lambda name, args, result: self.emit("tool", side="airline", name=name, args=args, result=result)
-        return await llm.run_turn(self.messages, TOOLS, self.handlers, on_tool)
+        on_round = lambda seconds: self.emit("llm_round", side="airline", seconds=seconds)
+        return await llm.run_turn(self.messages, TOOLS, self.handlers, on_tool, on_round)

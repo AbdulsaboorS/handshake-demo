@@ -6,6 +6,7 @@ only gets what came out of the line on its side.
 
 import asyncio
 import os
+import time
 from collections.abc import Callable
 
 from backend import airline
@@ -27,8 +28,8 @@ class TextLine:
     async def send_code(self, code: str) -> str:
         return code
 
-    async def speak(self, speaker: str, text: str) -> str:
-        return text
+    async def speak(self, speaker: str, text: str) -> tuple[str, dict]:
+        return text, {}
 
     async def close(self) -> None:
         pass
@@ -53,9 +54,9 @@ class Call:
     async def say(self, speaker: str, text: str) -> str:
         """Put a line on the call. Returns what the other side heard."""
         self.emit("say", speaker=speaker, text=text)
-        heard = await self.line.speak(speaker, text)
+        heard, timing = await self.line.speak(speaker, text)
         if self.voice:
-            self.emit("heard", by="agent" if speaker == "airline" else "airline", text=heard)
+            self.emit("heard", by="agent" if speaker == "airline" else "airline", text=heard, **timing)
         return heard
 
     def _queue_auth_required(self, approval: Approval) -> None:
@@ -113,10 +114,13 @@ class Call:
 
             if approval := self.pending:
                 self.pending = None
+                held = time.time()
                 try:
                     token = await asyncio.wait_for(asyncio.shield(self.waiting), QUICK_APPROVAL_S)
+                    emit("hold", seconds=time.time() - held)
                     line = "(quiet on the line)"
                 except TimeoutError:
+                    emit("hold", seconds=time.time() - held)
                     # The line stays open while the owner decides.
                     line = await self.say("airline", await business.respond(heard))
                     token = await self.waiting
