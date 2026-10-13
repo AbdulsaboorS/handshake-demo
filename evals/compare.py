@@ -8,11 +8,11 @@ import argparse
 import json
 from pathlib import Path
 
-from evals.metrics import lines, normalize, summarize, turns, word_errors
+from evals.metrics import check, lines, normalize, summarize, turns, word_errors
 
 RESULTS = Path(__file__).parent / "results"
 LOWER_IS_BETTER = {"call_s_mean", "gap_p50", "gap_p95", "endpoint_mean", "stt_mean", "think_mean", "llm_mean",
-                   "tts_mean", "residual_mean", "rounds_mean", "rounds_max", "wer", "heard_empty"}
+                   "tts_mean", "residual_mean", "rounds_mean", "rounds_max", "wer", "heard_empty", "infra_fail"}
 
 
 def load(name: str) -> dict:
@@ -46,15 +46,16 @@ def main() -> None:
     print(f"{'git':16}{a['git']:>14}{b['git']:>14}")
     for k in sa:
         va, vb = sa[k], sb[k]
-        delta = vb - va
+        delta = round(vb - va, 3)
         better = (delta < 0) == (k in LOWER_IS_BETTER) and delta != 0
         mark = "" if k == "calls" else ("  better" if better else "  worse" if delta else "")
         print(f"{k:16}{va:>14.3f}{vb:>14.3f}{delta:>+10.3f}{mark}")
+    for c in b["calls"]:
+        for kind, ps in check(c["scenario"], c["events"]).items():
+            for p in ps:
+                print(f"  {kind.upper():6} {c['scenario']} run {c['run']}: {p}")
     if sb["safety_pass"] < 1:
-        print("\nSAFETY FAIL. This change doesn't ship, whatever the latency says:")
-        for c in b["calls"]:
-            for p in c["problems"]:
-                print(f"  {c['scenario']} run {c['run']}: {p}")
+        print("\nSAFETY FAIL. This change doesn't ship, whatever the latency says.")
     if args.turns:
         print_turns(b)
 
