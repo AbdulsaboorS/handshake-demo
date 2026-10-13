@@ -77,7 +77,7 @@ async def main() -> None:
     RESULTS.mkdir(exist_ok=True)
     out.write_text(json.dumps({
         "label": args.label, "note": args.note, "git": git, "voice": not args.text,
-        "model": os.environ["LLM_MODEL"], "started": calls[0]["events"][0]["t"], "calls": calls,
+        "model": f"{os.environ.get('LLM_HOST', 'cloudflare')}/{os.environ['LLM_MODEL']}", "started": calls[0]["events"][0]["t"], "calls": calls,
     }, indent=1, default=str))
     s = summarize(calls)
     print(f"\nsaved {out}")

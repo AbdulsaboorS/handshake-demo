@@ -14,11 +14,13 @@ load_dotenv()
 
 MAX_TOOL_ROUNDS = 6
 
-_client = httpx.AsyncClient(
-    base_url=f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CF_ACCOUNT_ID']}/ai/v1",
-    headers={"Authorization": f"Bearer {os.environ['CF_API_TOKEN']}"},
-    timeout=60,
-)
+# Both serve open models over the same OpenAI-style API. Cerebras is ~5x faster to first sentence on the free tier.
+HOSTS = {
+    "cloudflare": (f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CF_ACCOUNT_ID']}/ai/v1", "CF_API_TOKEN"),
+    "cerebras": ("https://api.cerebras.ai/v1", "CEREBRAS_API_KEY"),
+}
+_url, _key = HOSTS[os.environ.get("LLM_HOST", "cloudflare")]
+_client = httpx.AsyncClient(base_url=_url, headers={"Authorization": f"Bearer {os.environ[_key]}"}, timeout=60)
 
 Handler = Callable[..., Awaitable[object]]
 
@@ -70,18 +72,28 @@ async def _read_stream(r: httpx.Response, spoken: dict[int, str], on_say: Callab
             continue
         choices = json.loads(line[5:]).get("choices")
         delta = choices[0]["delta"] if choices else {}
-        content += delta.get("content") or ""
+        # Some models speak in plain text instead of calling say. That streams the same way.
+        text = _plain(delta.get("content") or "")
+        if text := text if content else text.lstrip():  # Qwen opens with blank lines
+            on_say(text)
+            content += text
+            spoken[-1] = content  # counts as said, so a failed stream isn't retried into a repeat
         for d in delta.get("tool_calls") or []:
             call = calls.setdefault(d["index"], {"id": "", "type": "function", "function": {"name": "", "arguments": ""}})
             call["id"] = d.get("id") or call["id"]
             call["function"]["name"] += d.get("function", {}).get("name") or ""
             call["function"]["arguments"] += d.get("function", {}).get("arguments") or ""
             if call["function"]["name"] == "say":
-                text, before = _partial_text(call["function"]["arguments"]), spoken.get(d["index"], "")
+                text, before = _plain(_partial_text(call["function"]["arguments"])), spoken.get(d["index"], "")
                 if len(text) > len(before):
                     on_say(text[len(before):])
                     spoken[d["index"]] = text
     return {"content": content, "tool_calls": [calls[i] for i in sorted(calls)]}
+
+
+def _plain(text: str) -> str:
+    """Models emit narrow no-break spaces ("9:40\u202fPM"); speech and scoring want plain ones."""
+    return text.replace("\u202f", " ").replace("\u00a0", " ")
 
 
 def _partial_text(arguments: str) -> str:
@@ -166,11 +178,8 @@ async def run_turn(
         on_round(time.time() - t)
         calls = msg.get("tool_calls") or []
         messages.append({"role": "assistant", "content": msg.get("content") or "", **({"tool_calls": calls} if calls else {})})
-        if not calls:
-            line = (msg.get("content") or "").strip()
-            if line:  # the model spoke without the tool; it still gets said
-                on_sentence(line)
-            return line
+        if not calls:  # spoke in plain text, already streamed to on_sentence
+            return (msg.get("content") or "").strip()
         said = None
         for call in calls:
             name = call["function"]["name"]
@@ -179,7 +188,7 @@ async def run_turn(
             except json.JSONDecodeError:
                 args = {}
             if name == "say":
-                said, result = args.get("text", ""), {"status": "said"}
+                said, result = _plain(args.get("text", "")), {"status": "said"}
             else:
                 handler = handlers.get(name)
                 try:
