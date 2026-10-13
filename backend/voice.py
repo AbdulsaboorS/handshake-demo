@@ -9,6 +9,7 @@ import os
 import time
 import wave
 from collections import deque
+from collections.abc import AsyncIterator
 
 import httpx
 import numpy as np
@@ -117,35 +118,52 @@ class VoiceLine:
     def _other(self, speaker: str) -> str:
         return "airline" if speaker == "agent" else "agent"
 
-    async def _transmit(self, speaker: str, pcm: np.ndarray, timing: dict) -> np.ndarray:
-        ear = self.ears[self._other(speaker)]
+    def _clear(self, listener: str) -> Ear:
+        ear = self.ears[listener]
         while not ear.utterances.empty():
             ear.utterances.get_nowait()
-        timing["play_start"] = time.time()
-        await self.peers[speaker].mouth.play(pcm)
-        timing["play_end"] = time.time()
-        heard = await ear.collect(timeout=END_OF_TURN_S + 5)
-        timing["endpoint_s"] = time.time() - timing["play_end"]
-        return heard
+        return ear
 
     async def send_code(self, code: str) -> str:
         # A line waking from silence can clip the first ~70ms, which ate whole digits. Lead with a tone that
         # is never part of a code, so the clip lands on it.
-        return dtmf.decode(await self._transmit("agent", dtmf.tones("#" + code), {})).lstrip("#")
+        ear = self._clear("airline")
+        await self.peers["agent"].mouth.play(dtmf.tones("#" + code))
+        return dtmf.decode(await ear.collect(timeout=END_OF_TURN_S + 5)).lstrip("#")
 
-    async def speak(self, speaker: str, text: str) -> tuple[str, dict]:
-        """Returns what the other side heard, and where the time went (wall clock, for evals)."""
-        if not text.strip():  # a model can end a turn without saying anything; aura-1 rejects empty text
+    async def speak(self, speaker: str, sentences: AsyncIterator[str]) -> tuple[str, dict]:
+        """Synthesize each sentence the moment it's written and play them in order, so the first one is on
+        the line while the model is still writing. Returns what the other side heard, and where the time
+        went (wall clock, for evals)."""
+        ear = self._clear(self._other(speaker))
+        timing: dict = {}
+        audio: asyncio.Queue[asyncio.Task | None] = asyncio.Queue()
+
+        async def synthesize():
+            try:
+                async for text in sentences:
+                    timing.setdefault("first_text_t", time.time())
+                    audio.put_nowait(asyncio.create_task(tts(text, VOICES[speaker])))
+            finally:
+                audio.put_nowait(None)
+
+        writing = asyncio.create_task(synthesize())
+        while (clip := await audio.get()) is not None:
+            pcm = await clip
+            if "play_start" not in timing:
+                timing["play_start"] = time.time()
+                timing["tts_s"] = timing["play_start"] - timing["first_text_t"]
+            await self.peers[speaker].mouth.play(pcm)
+        await writing
+        if "play_start" not in timing:  # a model can end a turn without saying anything
             return "", {}
-        timing = {}
+        timing["play_end"] = time.time()
+        heard = await ear.collect(timeout=END_OF_TURN_S + 5)
+        timing["endpoint_s"] = time.time() - timing["play_end"]
         t = time.time()
-        pcm = await tts(text, VOICES[speaker])
-        timing["tts_s"] = time.time() - t
-        audio = await self._transmit(speaker, pcm, timing)
-        t = time.time()
-        heard = await stt(audio)
+        text = await stt(heard)
         timing["stt_s"] = time.time() - t
-        return heard, timing
+        return text, timing
 
     async def close(self) -> None:
         await asyncio.gather(*(p.leave() for p in self.peers.values()))

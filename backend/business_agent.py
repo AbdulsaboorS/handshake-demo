@@ -143,9 +143,9 @@ class BusinessAgent:
     def notice(self, text: str) -> None:
         self.notices.append(f"[{text}]")
 
-    async def respond(self, heard: str) -> str:
+    async def respond(self, heard: str, on_sentence: Callable[[str], None]) -> str:
         self.messages.append({"role": "user", "content": "\n".join([*self.notices, heard])})
         self.notices.clear()
         on_tool = lambda name, args, result: self.emit("tool", side="airline", name=name, args=args, result=result)
         on_round = lambda seconds: self.emit("llm_round", side="airline", seconds=seconds)
-        return await llm.run_turn(self.messages, TOOLS, self.handlers, on_tool, on_round)
+        return await llm.run_turn(self.messages, TOOLS, self.handlers, on_tool, on_round, on_sentence)

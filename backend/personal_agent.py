@@ -74,12 +74,12 @@ class PersonalAgent:
     def notice(self, text: str) -> None:
         self.notices.append(f"[{text}]")
 
-    async def respond(self, heard: str) -> str:
+    async def respond(self, heard: str, on_sentence: Callable[[str], None]) -> str:
         self.messages.append({"role": "user", "content": "\n".join([*self.notices, heard])})
         self.notices.clear()
         on_tool = lambda name, args, result: self.emit("tool", side="agent", name=name, args=args, result=result)
         on_round = lambda seconds: self.emit("llm_round", side="agent", seconds=seconds)
-        line = await llm.run_turn(self.messages, TOOLS, self.handlers, on_tool, on_round)
+        line = await llm.run_turn(self.messages, TOOLS, self.handlers, on_tool, on_round, on_sentence)
         # Saying goodbye ends the call, whether or not the model remembered to call end_call.
         if "goodbye" in line.lower():
             self.hung_up = True

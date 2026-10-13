@@ -53,7 +53,9 @@ def lines(events: list[dict]) -> list[dict]:
         if e["kind"] == "say":
             said = e
         elif e["kind"] == "heard" and said and e.get("play_start"):
-            out.append({**e, "speaker": said["speaker"], "said": said["text"], "said_t": said["t"], "heard": e["text"]})
+            # With streaming, the model is still writing when audio starts; first_text_t is its first sentence.
+            out.append({**e, "speaker": said["speaker"], "said": said["text"], "said_t": said["t"], "heard": e["text"],
+                        "first_t": e.get("first_text_t", said["t"])})
             said = None
     return out
 
@@ -64,8 +66,8 @@ def turns(events: list[dict]) -> list[dict]:
     gap      = this line's first audio minus the previous line's last audio (what a listener waits through)
     endpoint = previous line's end until its listener decided the speaker stopped (+ SFU transit)
     stt      = transcribing the previous line
-    think    = transcript in hand until this line's text exists (LLM rounds, tools, minus any hold)
-    tts      = synthesizing this line
+    think    = transcript in hand until this line's first sentence exists (LLM rounds, tools, minus any hold)
+    tts      = synthesizing this line's first sentence
     residual = gap minus all of the above (event loop, queueing; should be ~0)"""
     ls = lines(events)
     rows = []
@@ -73,7 +75,7 @@ def turns(events: list[dict]) -> list[dict]:
         between = [e for e in events if prev["t"] <= e["t"] <= cur["said_t"]]
         hold = sum(e["seconds"] for e in between if e["kind"] == "hold")
         rounds = [e["seconds"] for e in between if e["kind"] == "llm_round"]
-        think = cur["said_t"] - prev["t"] - hold
+        think = cur["first_t"] - prev["t"] - hold
         gap = cur["play_start"] - prev["play_end"] - hold
         parts = {"endpoint": prev["endpoint_s"], "stt": prev["stt_s"], "think": think, "tts": cur["tts_s"]}
         rows.append({"speaker": cur["speaker"], "gap": gap, **parts, "residual": gap - sum(parts.values()),

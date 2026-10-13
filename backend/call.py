@@ -7,7 +7,7 @@ only gets what came out of the line on its side.
 import asyncio
 import os
 import time
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from backend import airline
 from backend.business_agent import BusinessAgent
@@ -28,8 +28,8 @@ class TextLine:
     async def send_code(self, code: str) -> str:
         return code
 
-    async def speak(self, speaker: str, text: str) -> tuple[str, dict]:
-        return text, {}
+    async def speak(self, speaker: str, sentences: AsyncIterator[str]) -> tuple[str, dict]:
+        return " ".join([s async for s in sentences]), {}
 
     async def close(self) -> None:
         pass
@@ -51,13 +51,33 @@ class Call:
         else:
             self.line = TextLine()
 
-    async def say(self, speaker: str, text: str) -> str:
-        """Put a line on the call. Returns what the other side heard."""
-        self.emit("say", speaker=speaker, text=text)
-        heard, timing = await self.line.speak(speaker, text)
+    async def say(self, speaker: str, sentences: AsyncIterator[str]) -> str:
+        """Put a line on the call, sentence by sentence as it's written. Returns what the other side heard."""
+        said = []
+
+        async def logged():
+            async for s in sentences:
+                said.append(s)
+                yield s
+            self.emit("say", speaker=speaker, text=" ".join(said))
+
+        heard, timing = await self.line.speak(speaker, logged())
         if self.voice:
             self.emit("heard", by="agent" if speaker == "airline" else "airline", text=heard, **timing)
         return heard
+
+    async def turn(self, speaker: str, respond: Callable[[str, Callable[[str], None]], Awaitable[str]], heard: str) -> str:
+        """One agent's turn: its sentences go on the line while it's still writing the rest."""
+        queue: asyncio.Queue[str | None] = asyncio.Queue()
+        writing = asyncio.create_task(respond(heard, queue.put_nowait))
+        writing.add_done_callback(lambda _: queue.put_nowait(None))
+
+        async def sentences():
+            while (s := await queue.get()) is not None:
+                yield s
+            await writing  # surfaces a failed turn instead of a silent one
+
+        return await self.say(speaker, sentences())
 
     def _queue_auth_required(self, approval: Approval) -> None:
         # The owner's phone buzzes the moment the request exists, not when the conversation gets to it.
@@ -110,12 +130,12 @@ class Call:
         business = BusinessAgent(self.provider, session, emit, self._queue_auth_required)
         personal = PersonalAgent(emit, self.overreach)
 
-        line = await self.say("airline", business.greet())
+        line = await self.say("airline", _once(business.greet()))
         for _ in range(MAX_TURNS):
             if self.pending:
                 # PACT returns AUTH_REQUIRED to the agent directly, so Pocket knows the state, not just the words.
                 personal.notice("Northwind's system sent an approval request to Abdul's phone. He has NOT answered yet.")
-            heard = await self.say("agent", await personal.respond(line))
+            heard = await self.turn("agent", personal.respond, line)
             if personal.hung_up:
                 break
 
@@ -129,7 +149,7 @@ class Call:
                 except TimeoutError:
                     emit("hold", seconds=time.time() - held)
                     # The line stays open while the owner decides.
-                    line = await self.say("airline", await business.respond(heard))
+                    line = await self.turn("airline", business.respond, heard)
                     token = await self.waiting
                 if token:
                     self.provider.upgrade(session, token)
@@ -143,16 +163,20 @@ class Call:
                     why = "declined" if approval.status == "denied" else "didn't respond in time"
                     personal.notice(f"Abdul {why}. Nothing is authorized. Tell the airline not to make the change.")
                     business.notice(f"Owner approval {approval.status}. No new permissions. Do not make the change.")
-                heard = await self.say("agent", await personal.respond(line))
+                heard = await self.turn("agent", personal.respond, line)
                 if personal.hung_up:
                     break
 
-            line = await self.say("airline", await business.respond(heard))
+            line = await self.turn("airline", business.respond, heard)
 
         receipt = self.provider.receipt(session)
         claims = verify_receipt(receipt, self.provider.signer.public_key)
         emit("receipt", jws=receipt, claims=claims)
         emit("report", text=await personal.report(claims))
+
+
+async def _once(text: str) -> AsyncIterator[str]:
+    yield text
 
 
 if __name__ == "__main__":
