@@ -35,9 +35,10 @@
   .brand { margin-right: auto; display: flex; align-items: baseline; gap: 14px; }
   .brand b { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
   .brand span { color: var(--muted); font-size: 14px; }
-  .tabs { display: flex; gap: 22px; }
-  .tabs button { all: unset; cursor: pointer; font-size: 14px; color: var(--faint); padding: 4px 0; border-bottom: 1.5px solid transparent; }
-  .tabs button[aria-pressed="true"] { color: var(--ink); border-color: var(--ink); }
+  .tabs { display: flex; padding: 3px; border-radius: 999px; background: #ebe9e3; }
+  .tabs button { all: unset; cursor: pointer; font-size: 14px; color: var(--muted); padding: 7px 16px; border-radius: 999px; transition: background .15s, color .15s; }
+  .tabs button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: 0 1px 3px #11121614, 0 0 0 1px var(--line); }
+  .tabs:has(button:disabled) { opacity: .5; }
   .toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); cursor: pointer; user-select: none; }
   .toggle input { accent-color: var(--ink); margin: 0; }
   .start { all: unset; cursor: pointer; font-size: 14px; font-weight: 500; padding: 9px 18px; border-radius: 999px; background: var(--ink); color: var(--bg); }
@@ -59,7 +60,10 @@
 
   #transcript { flex: 1; overflow-y: auto; padding: 28px 0; display: flex; flex-direction: column; gap: 22px; scrollbar-width: none; }
   #transcript::-webkit-scrollbar { display: none; }
-  .empty { margin: auto 0; color: var(--faint); font-size: 22px; max-width: 560px; line-height: 1.4; letter-spacing: -0.01em; }
+  .empty { margin: auto 0; max-width: 620px; }
+  .empty b { display: block; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .empty p { margin: 0; color: var(--muted); font-size: 19px; line-height: 1.45; }
+  .scenario { font: 13px var(--mono); color: var(--accent); background: var(--accent-soft); padding: 3px 10px; border-radius: 999px; }
   .line { display: grid; grid-template-columns: 112px minmax(0, 1fr) 56px; gap: 0 20px; animation: in .3s ease-out; }
   .who { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding-top: 6px; }
   .line.airline .who { color: var(--accent); }
@@ -102,6 +106,7 @@
   .actions button { all: unset; cursor: pointer; text-align: center; padding: 11px; border-radius: 999px; font-size: 15px; font-weight: 500; }
   .actions .deny { border: 1px solid var(--line); }
   .actions .allow { background: var(--ink); color: var(--bg); }
+  .actions button:disabled { opacity: .4; cursor: default; }
   .noanswer { margin-top: 16px; text-align: center; font-size: 14px; color: var(--muted); padding: 10px; border-radius: 999px; border: 1px dashed var(--line); }
   .verdict { margin-top: 16px; font-size: 15px; font-weight: 500; }
   .verdict.approved { color: var(--ok); }
@@ -147,9 +152,9 @@
       <span class="party" id="party-agent"><span class="dot"></span>Pocket <small>for Abdul</small></span>
       <span class="arrow">&rarr;</span>
       <span class="party" id="party-airline"><span class="dot"></span>Northwind Airways <small>support</small></span>
-      <span class="meta"><span id="median"></span><span id="timer">00:00</span></span>
+      <span class="meta"><span class="scenario" id="scenario-tag"></span><span id="median"></span><span id="timer">00:00</span></span>
     </div>
-    <div id="transcript"><div class="empty">Pocket is about to call Northwind Airways to move Abdul's November 17 flight from Seattle to Dubai.</div></div>
+    <div id="transcript"></div>
   </section>
   <aside class="trust">
     <div class="label">Trust</div>
@@ -159,6 +164,11 @@
 </main>
 <div id="log"></div>
 <script>
+const SCENARIOS = {
+  happy: ["Owner approves", "Pocket asks Northwind to move Abdul's flight. The change needs his approval, and he taps Approve on his phone."],
+  unreachable: ["Owner unreachable", "Same call, but Abdul never answers his phone. Watch the request expire and nothing get charged."],
+  overreach: ["Agent lies", "Pocket tells Northwind that Abdul already approved. He didn't. Watch the code ignore the claim."],
+};
 const CHECKS = [["verified", "Caller verified"], ["bound", "Call bound"], ["approval", "Owner approval"], ["receipt", "Signed receipt"]];
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -273,8 +283,22 @@ function approvalCard(e) {
   countdown = setInterval(tick, 100);
 }
 async function decide(approve) {
-  if (!approvalId) return;
+  if (!approvalId || approvalStatus) return;
+  document.querySelectorAll("#approval .actions button").forEach((b) => b.disabled = true);
   await fetch(`/approvals/${approvalId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ approve }) });
+}
+function decided(status) {
+  if (approvalStatus) return;  // owner_decided and approval_resolved both land here; the first one wins
+  clearInterval(countdown);
+  approvalStatus = status;
+  const ok = status === "approved";
+  document.querySelector("#approval .actions, #approval .noanswer")?.remove();
+  $("#approval .bar span").style.transform = ok ? "scaleX(1)" : "scaleX(0)";
+  $("#secs").textContent = "";
+  $("#approval h4").textContent = ok ? "Change approved" : status === "denied" ? "Change denied" : "Request expired";
+  $("#approval").insertAdjacentHTML("beforeend", `<div class="verdict ${status}">${
+    ok ? "Approved by Abdul. Northwind is making the change." : status === "denied" ? "Denied by Abdul. Nothing will change." : "No answer. Expired."}</div>`);
+  $("#c-approval").classList.replace("wait", ok ? "done" : "fail");
 }
 
 function outcome(c) {
@@ -314,6 +338,7 @@ function handle(e) {
       $("#timer").classList.add("live");
       callTimer = setInterval(() => $("#timer").textContent = new Date(Date.now() - start).toISOString().slice(14, 19), 250);
       $("#start").disabled = true;
+      document.querySelectorAll(".tabs button").forEach((b) => b.disabled = true);
       break;
     }
     case "registered":
@@ -332,17 +357,8 @@ function handle(e) {
     case "hold": heldSince += e.seconds; break;
     case "tool": tool(e); break;
     case "owner_notified": approvalCard(e); break;
-    case "approval_resolved": {
-      clearInterval(countdown);
-      approvalStatus = e.status;
-      const ok = e.status === "approved";
-      document.querySelector("#approval .actions, #approval .noanswer")?.remove();
-      $("#approval .bar span").style.transform = ok ? "scaleX(1)" : "scaleX(0)";
-      $("#approval").insertAdjacentHTML("beforeend",
-        `<div class="verdict ${e.status}">${ok ? "Approved by Abdul" : e.status === "denied" ? "Denied by Abdul" : "No answer. Expired."}</div>`);
-      $("#c-approval").classList.replace("wait", ok ? "done" : "fail");
-      break;
-    }
+    case "owner_decided": decided(e.status); break;
+    case "approval_resolved": decided(e.status); break;
     case "receipt": {
       const a = e.claims.actions;
       check("receipt", a.length ? "done" : "fail", a.length
@@ -362,6 +378,7 @@ function handle(e) {
       levels.agent = levels.airline = 0;
       clearInterval(callTimer); $("#timer").classList.remove("live");
       $("#start").disabled = false;
+      document.querySelectorAll(".tabs button").forEach((b) => b.disabled = false);
       break;
   }
 }
@@ -404,14 +421,19 @@ async function listen() {
 function selectScenario(s) {
   scenario = s;
   document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.scenario === s));
+  $("#scenario-tag").textContent = SCENARIOS[s][0];
+  // Before a call starts, the transcript area says what's about to happen.
+  if (!$("#transcript .line") && !$("#start").disabled) {
+    $("#transcript").innerHTML = `<div class="empty"><b>${SCENARIOS[s][0]}</b><p>${SCENARIOS[s][1]}</p></div>`;
+  }
 }
-document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => selectScenario(b.dataset.scenario));
+document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => { $("#transcript").innerHTML = ""; selectScenario(b.dataset.scenario); });
 $("#start").onclick = () => fetch("/calls", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ scenario, voice: $("#voice").checked }) });
 
 // Recording shortcuts: 1/2/3 pick a scenario, V toggles voice, Enter starts, A approves, D denies, L shows the audit log.
 document.addEventListener("keydown", (e) => {
   const pick = { 1: "happy", 2: "unreachable", 3: "overreach" }[e.key];
-  if (pick) selectScenario(pick);
+  if (pick && !$("#start").disabled) { $("#transcript").innerHTML = ""; selectScenario(pick); }
   const k = e.key.toLowerCase();
   if (k === "v") $("#voice").checked = !$("#voice").checked;
   if (e.key === "Enter" && !$("#start").disabled) $("#start").click();
@@ -426,6 +448,7 @@ function connect() {
   ws.onclose = () => setTimeout(connect, 1000);
 }
 renderChecks();
+selectScenario(scenario);
 connect();
 </script>
 </body>

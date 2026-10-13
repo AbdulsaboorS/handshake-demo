@@ -96,7 +96,10 @@ async def start_call(body: StartCall):
 async def decide(approval_id: str, body: Decision):
     if current is None or approval_id not in current.provider.approvals:
         raise HTTPException(404, "no such approval")
-    return {"status": current.provider.resolve(approval_id, body.approve).status}
+    status = current.provider.resolve(approval_id, body.approve).status
+    # The call picks the decision up at its next turn; the owner should see it the moment they tap.
+    emit("owner_decided", approval_id=approval_id, status=status)
+    return {"status": status}
 
 
 @app.post("/rtc/listen")
