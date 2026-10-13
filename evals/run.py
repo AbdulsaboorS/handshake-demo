@@ -109,6 +109,7 @@ async def main() -> None:
     if out.exists():
         raise SystemExit(f"{out} exists. Pick a new label; results are a record, not a scratch file.")
 
+    git = git_state()  # at start: code edited mid-run isn't what's running
     calls = []
     for run in range(args.runs):
         for scenario in args.scenarios.split(","):
@@ -120,7 +121,7 @@ async def main() -> None:
 
     RESULTS.mkdir(exist_ok=True)
     out.write_text(json.dumps({
-        "label": args.label, "note": args.note, "git": git_state(), "voice": not args.text,
+        "label": args.label, "note": args.note, "git": git, "voice": not args.text,
         "model": os.environ["LLM_MODEL"], "started": calls[0]["events"][0]["t"], "calls": calls,
     }, indent=1, default=str))
     s = summarize(calls)
