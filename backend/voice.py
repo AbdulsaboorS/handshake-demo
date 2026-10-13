@@ -13,7 +13,7 @@ from collections import deque
 import httpx
 import numpy as np
 
-from backend import dtmf
+from backend import dtmf, llm
 from backend.llm import post_with_retry
 from backend.realtime import RATE, Peer, RealtimeAPI
 
@@ -46,6 +46,12 @@ async def stt(pcm: np.ndarray) -> str:
     r = await post_with_retry(_ai, "/@cf/deepgram/nova-3?smart_format=true", content=buf.getvalue(),
                               headers={"Content-Type": "audio/wav"})
     return r.json()["result"]["results"]["channels"][0]["alternatives"][0]["transcript"]
+
+
+async def warm_up() -> None:
+    """The first model call after idle can take ~20s. Pay that while the line is still connecting."""
+    await asyncio.gather(tts("Hello.", VOICES["agent"]), stt(np.zeros(RATE // 2, np.int16)),
+                         llm.chat([{"role": "user", "content": "Say OK."}]))
 
 
 class Ear:
@@ -96,7 +102,7 @@ class VoiceLine:
 
     async def open(self) -> None:
         agent, airline = self.peers["agent"], self.peers["airline"]
-        await asyncio.gather(agent.join(), airline.join())
+        await asyncio.gather(agent.join(), airline.join(), warm_up())
         await asyncio.gather(
             airline.listen(agent, self.ears["airline"].feed),
             agent.listen(airline, self.ears["agent"].feed),
