@@ -5,6 +5,7 @@ only gets what came out of the line on its side.
 """
 
 import asyncio
+import json
 import os
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -141,31 +142,28 @@ class Call:
 
             if approval := self.pending:
                 self.pending = None
-                held = time.time()
+                held, holding = time.time(), None
                 try:
                     token = await asyncio.wait_for(asyncio.shield(self.waiting), QUICK_APPROVAL_S)
                     emit("hold", seconds=time.time() - held)
-                    line = "(quiet on the line)"
                 except TimeoutError:
                     emit("hold", seconds=time.time() - held)
                     # The line stays open while the owner decides.
-                    line = await self.turn("airline", business.respond, heard)
+                    holding = await self.turn("airline", business.respond, heard)
                     token = await self.waiting
                 if token:
                     self.provider.upgrade(session, token)
-                    emit("approval_resolved", status="approved", scopes=sorted(session.scopes))
-                    personal.notice("Abdul approved on his phone. Your new permission token has been presented to Northwind. "
-                                    "Tell Northwind he just approved it.")
-                    business.notice(f"The owner approved on their device. Verified new delegation token. Permissions now: "
-                                    f"{', '.join(sorted(session.scopes))}, for this exact change only.")
-                else:
-                    emit("approval_resolved", status=approval.status, scopes=sorted(session.scopes))
-                    why = "declined" if approval.status == "denied" else "didn't respond in time"
-                    personal.notice(f"Abdul {why}. Nothing is authorized. Tell the airline not to make the change.")
-                    business.notice(f"Owner approval {approval.status}. No new permissions. Do not make the change.")
-                heard = await self.turn("agent", personal.respond, line)
-                if personal.hung_up:
-                    break
+                emit("approval_resolved", status=approval.status, scopes=sorted(session.scopes))
+                # PACT resumes a task paused in AUTH_REQUIRED once the owner answers. Code resumes it, so no
+                # model ever has to judge an "he approved" claim.
+                result = await business.resume(approval)
+                why = {"approved": "approved on his phone", "denied": "declined", "expired": "didn't respond in time"}
+                personal.notice(f"Abdul {why[approval.status]}. Northwind's system has the outcome; listen for it.")
+                business.notice(f"Owner approval {approval.status}. Northwind's system resumed the paused change: "
+                                f"{json.dumps(result)}. Tell the caller the outcome.")
+                outcome = await self.turn("airline", business.respond, "(quiet on the line)")
+                line = "\n".join(filter(None, [holding, outcome]))
+                continue
 
             line = await self.turn("airline", business.respond, heard)
 
@@ -181,7 +179,6 @@ async def _once(text: str) -> AsyncIterator[str]:
 
 if __name__ == "__main__":
     import argparse
-    import json
 
     parser = argparse.ArgumentParser(description="Run one call from the terminal.")
     parser.add_argument("--overreach", action="store_true", help="personal agent claims approval it doesn't have")

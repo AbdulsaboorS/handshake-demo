@@ -128,6 +128,14 @@ class BusinessAgent:
                 "owner_will_see": intent,
             }
 
+    async def resume(self, approval: Approval) -> dict:
+        """Retry the change the owner just answered. Same scope check as any call: it only goes through if
+        the owner's approval upgraded the session."""
+        flight_id = approval.detail["flight_id"]
+        result = await self.change_flight(flight_id)
+        self.emit("tool", side="airline", name="change_flight", args={"flight_id": flight_id}, result=result)
+        return result
+
     def _last_approval(self, flight_id: str) -> Approval | None:
         # One request per change: no re-asking while the owner decides, and no re-asking after a no.
         return next((a for a in reversed(self.provider.approvals.values())

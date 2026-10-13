@@ -47,3 +47,22 @@ def test_no_re_asking_after_expiry(agent):
     assert after["status"] == "not_approved"
     assert len(sent) == 1
     assert airline.BOOKINGS[airline.PNR].charges == []
+
+
+def test_resume_after_approval_makes_the_approved_change(agent):
+    business, sent = agent
+    asyncio.run(business.change_flight(NEW_FLIGHT))
+    business.provider.resolve(sent[0].id, True)
+    business.provider.upgrade(business.session, asyncio.run(business.provider.wait(sent[0].id)))
+
+    assert asyncio.run(business.resume(sent[0]))["status"] == "changed"
+    assert airline.BOOKINGS[airline.PNR].charges[0]["amount_cents"] == 8400
+
+
+def test_resume_after_expiry_changes_nothing(agent):
+    business, sent = agent
+    asyncio.run(business.change_flight(NEW_FLIGHT))
+    asyncio.run(business.provider.wait(sent[0].id))
+
+    assert asyncio.run(business.resume(sent[0]))["status"] == "not_approved"
+    assert airline.BOOKINGS[airline.PNR].charges == []
