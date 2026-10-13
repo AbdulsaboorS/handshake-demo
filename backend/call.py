@@ -96,6 +96,7 @@ class Call:
             except TimeoutError:
                 pass
         heard_code = await self.line.send_code(code)
+        emit("code_heard", code=heard_code)
         session = self.provider.redeem_call_code(heard_code)
         emit("call_bound", code=heard_code, in_band=self.voice)
         emit("caller_classified", caller="ai_agent", declared=True, detector="stand-in for fleming-1")
