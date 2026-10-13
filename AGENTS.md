@@ -30,7 +30,8 @@ airline tool goes through a scope check first. A model saying "my owner approved
 5. `change_flight` needs `bookings:change` + `payments:charge`, so it raises AUTH_REQUIRED. The owner
    is notified at once (UI phone card, `/approve`, optional ntfy push), countdown running. Approvals
    carry `authorization_details` bound to the exact flight and amount. One request per change.
-6. Approved: new delegation token, change executes. Expired/denied: nothing changes.
+6. When the owner answers, code resumes the paused change (PACT task resume) through the same scope
+   check, and the airline announces the outcome. Approved: it executes. Expired/denied: nothing changes.
 7. Signed receipt. Pocket writes its report to the owner from the verified receipt, not from memory.
 Scenarios: happy, unreachable (owner never answers), overreach (Pocket lies about approval).
 
@@ -38,9 +39,11 @@ Scenarios: happy, unreachable (owner never answers), overreach (Pocket lies abou
 - Python 3.12, FastAPI, uvicorn, httpx, PyJWT[crypto], aiortc, numpy. No agent frameworks. `uv`.
 - Cloudflare Workers AI, one token:
   - LLM `@cf/meta/llama-3.3-70b-instruct-fp8-fast`. Speech goes through a `say` tool because Llama
-    always reaches for a tool. gpt-oss-120b leaks `<|say|>` tokens on Workers AI, don't use it.
+    always reaches for a tool. Its arguments stream, so sentences are synthesized and played while the
+    model is still writing. gpt-oss-120b leaks `<|say|>` tokens; llama-4-scout was slower in real calls.
   - STT `@cf/deepgram/nova-3` (REST, 16k wav, ~0.35s warm; first call after idle can take ~20s).
-  - TTS `@cf/deepgram/aura-1` (linear16, 48kHz, raw). Voices: airline asteria, Pocket orion.
+  - TTS `@cf/deepgram/aura-1` (linear16, 48kHz, raw). Voices: airline asteria, Pocket orion. aura-2-en
+    sounds better but takes 3-4s per line vs under 1s.
 - Cloudflare Realtime SFU carries the call. Each party is an aiortc peer with its own session,
   publishing one track and subscribing to the other. Wait for `connected` before subscribing.
   Each side endpoints incoming audio by energy (`Ear`) and transcribes it, so agents only get what
@@ -58,9 +61,10 @@ backend/call.py            one call end to end over a TextLine or VoiceLine; CLI
 backend/llm.py             Workers AI chat + tool loop, retry helper
 backend/voice.py           VoiceLine: TTS, STT, Ear endpointing, DTMF send, browser listener session
 backend/realtime.py        Cloudflare Realtime API + aiortc Peer and outbound audio track
-backend/dtmf.py            DTMF tone generation and Goertzel decoding
+backend/dtmf.py            DTMF tone generation and Goertzel decoding (180ms tones: the line drops packet bursts)
 backend/main.py            FastAPI: UI, websocket events (audit log), approvals, listener endpoints
 ui/index.html              recording UI;  ui/approve.html  the owner's phone page
+evals/                     voice eval harness: run.py, compare.py, metrics.py, binding.py, results/
 PROTOCOL.md                "Voice binding for PACT";  demo/script.md  video beats
 ```
 Fictional airline and passenger. No real PNRs or names.
@@ -73,6 +77,7 @@ Fictional airline and passenger. No real PNRs or names.
 ```
 uv sync
 uv run pytest -q                                   # gate tests
+uv run python -m evals.run --label x --note "..."  # voice eval, ~15 min; see evals/README.md
 uv run python -m backend.call --approve-after 3    # omit flag = owner unreachable; --overreach; --voice
 uv run uvicorn backend.main:app --reload --timeout-graceful-shutdown 1 --port 8000
 ```
@@ -86,5 +91,6 @@ uv run uvicorn backend.main:app --reload --timeout-graceful-shutdown 1 --port 80
 
 ## Workflow
 - Commit in small logical steps and `git push origin main` after every commit. Parallel agents pull from remote.
+- Changes to the call get an eval run first. Safety is a hard gate. Don't run anything heavy during an eval.
 - End every session by rewriting `SESSION.md`: what got done, what's next, open problems. Max 60 lines.
 - Keep this file under 100 lines. Update it when a decision changes, not with progress notes.

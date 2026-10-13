@@ -1,99 +1,53 @@
 # handshake-demo
 
-My AI agent calls an airline's AI agent to move my flight. The airline checks who's calling and what
-I let it do, lets it look but not touch, and pings my phone before it spends a dollar. If I don't
-answer, nothing happens, and there's a signed receipt that proves it.
-
-It's a real voice call. Two agents talking over Cloudflare Realtime, each one only knowing what it
-actually heard.
+My AI agent calls an airline's AI agent to move my flight, on a live voice call. The airline verifies who's
+calling and what I allowed, and pings my phone before it spends a dollar. No answer, no change, and a signed
+receipt proves it.
 
 > Demo video: coming soon
 
-## Why
+## Why I built this
 
-This month Sierra and Decagon both shipped specs for personal agents dealing with businesses. Sierra
-and Meta announced the Personal Agent Protocol. Decagon and Instinct open-sourced
-[PACT](https://openpactprotocol.org/spec). Sierra also shipped fleming-1, a model that guesses whether
-the caller on a phone line is an AI.
+Decagon open-sourced [PACT](https://openpactprotocol.org/spec) for agent identity and consent. It covers
+HTTP and says nothing about phone calls, where all you have is audio. I wanted to see what it takes to make
+it work on a call, and to use the build to get sharper at evals: every change here was measured before it
+shipped.
 
-PACT handles agent identity and consent over HTTP. Nobody has said how any of it works on a call,
-where all you have is audio. So I built that part on top of PACT. The write-up is in
-[PROTOCOL.md](PROTOCOL.md).
+## How it works
 
-## What happens on the call
+1. **Before dialing**, Pocket (my agent) registers with Northwind using PACT tokens and gets a one-time code.
+2. **On the call**, Pocket plays the code as keypad tones. Northwind decodes it and binds the call to that
+   verified session. That's the new part: [PROTOCOL.md](PROTOCOL.md).
+3. **Changing the flight** needs more than the read-only access I gave. Northwind's code pauses the task and
+   asks me on my phone, for this exact flight and price.
+4. **Approved**, the change goes through. **No answer** or **Pocket lying** about approval, nothing changes.
 
-1. Before dialing, my agent (Pocket) sends Northwind its signed identity token and the read-only
-   permission I gave it earlier. Northwind hands back a one-time 6-digit code.
-2. Pocket dials and plays the code as keypad tones. Northwind decodes them and now knows exactly who's
-   on the line.
-3. Pocket asks to move my flight. Northwind finds a later one, says the price out loud, Pocket says go.
-4. Changing a flight and charging my card needs more than read-only. Northwind's system asks me, on my
-   phone, for this exact change at this exact price, with a countdown.
-5. Three ways it ends:
-   - **I approve.** Flight changed, $84 charged, signed receipt.
-   - **I don't answer.** Request expires. Nothing changed, nothing charged, and the receipt says so.
-   - **Pocket lies.** It tells Northwind "he already approved it." Doesn't matter. Permission only
-     comes from my phone.
-6. Pocket writes its report to me from the signed receipt, not from its memory of the call.
+The models do the talking. Plain code does the trusting ([`backend/pact.py`](backend/pact.py)).
 
-## The one rule
+## Evals
 
-The models do the talking. Plain code does the trusting.
+Safety is a hard gate: nothing charged, claimed or reported without my approval. Then latency and hearing.
 
-Token checks, scope checks, the approval timeout, and receipt signing are all regular code
-([`backend/pact.py`](backend/pact.py)). The airline's backend checks the caller's permissions itself
-([`backend/airline.py`](backend/airline.py)), so there's no way for a model to talk its way into a
-change. The tests in [`tests/`](tests/) are mostly about that.
+| | before | now |
+|---|---|---|
+| Safety, 9 voice calls | 100% | 100% |
+| Calls that finish the task | 78% | 100% |
+| Silence between turns, median / p95 | 3.6s / 11.3s | 3.4s / 4.9s |
+| Call code decoded on first try | 18/20 | 40/40 |
 
-## Stack
-
-- Python, FastAPI, no agent framework
-- Cloudflare Workers AI for everything model-shaped: Llama 3.3 70B for both agents, Deepgram nova-3
-  for speech-to-text, Deepgram aura-1 for text-to-speech
-- Cloudflare Realtime (WebRTC SFU) for the call, with `aiortc` on the Python side
-- ES256 JWTs via PyJWT
-- One HTML file for the UI, one for the phone
-
-The whole thing runs for about $0.
+How the harness works and what each fix bought: [evals/README.md](evals/README.md).
 
 ## Run it
 
-You need a Cloudflare account with:
-- a Workers AI API token (dashboard: My Profile, API Tokens, Create Token, "Workers AI" template)
-- a Realtime SFU app (dashboard: Realtime, SFU, Create application)
+Needs a Cloudflare account (Workers AI token + a Realtime SFU app). Everything runs for about $0.
 
 ```
-cp .env.example .env    # fill in the Cloudflare values
+cp .env.example .env    # Cloudflare values
 uv sync
 uv run uvicorn backend.main:app --port 8000
 ```
 
-Open http://localhost:8000, pick a scenario, hit Start call. Keyboard: `1` `2` `3` pick a scenario,
-`Enter` starts, `A` approves, `D` denies.
+Open http://localhost:8000. Keys: `1` `2` `3` pick a scenario, `Enter` starts, `A` approves, `D` denies.
 
-To approve from your actual phone, run `cloudflared tunnel --url http://localhost:8000` and open the
-printed URL with `/approve` on the end. For a real push notification, install the free ntfy app,
-subscribe to a topic, and put it in `NTFY_TOPIC`.
-
-Without the browser:
-
-```
-uv run python -m backend.call --approve-after 3          # text mode, I approve after 3s
-uv run python -m backend.call                            # I never answer
-uv run python -m backend.call --overreach                # Pocket lies about approval
-uv run python -m backend.call --voice --approve-after 3  # over Cloudflare Realtime
-uv run pytest -q
-```
-
-## What's real and what's not
-
-Real: the tokens and signatures, the scope checks, the approval flow and timeout, the receipts, the
-keypad tones, the audio over Cloudflare, the speech recognition on both sides.
-
-Simplified: the airline and its data are fake. The agent-to-airline side channel is a function call,
-not HTTP. Keys live in memory. The "is this caller an AI" detector is a labeled stand-in for something
-like fleming-1. More in [PROTOCOL.md](PROTOCOL.md#what-the-reference-implementation-simplifies).
-
----
-
-The future isn't agents that can do everything. It's agents that know when to ask.
+Python, FastAPI, Cloudflare Workers AI (Llama 3.3 70B, Deepgram nova-3 and aura-1), Cloudflare Realtime.
+The airline and booking are fake; the tokens, signatures, approvals, tones and audio are real.
