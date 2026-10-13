@@ -20,7 +20,7 @@ from backend.realtime import RATE, Peer, RealtimeAPI
 VOICES = {"airline": "asteria", "agent": "orion"}
 SPEECH_RMS = 300
 END_OF_TURN_S = 0.55
-PREROLL_FRAMES = 3
+PREROLL_FRAMES = 15  # 300ms. 60ms clipped the first word, since speech ramps up under the energy threshold
 
 _ai = httpx.AsyncClient(
     base_url=f"https://api.cloudflare.com/client/v4/accounts/{os.environ['CF_ACCOUNT_ID']}/ai/run",
