@@ -42,14 +42,14 @@ def main() -> None:
 
     a, b = load(args.baseline), load(args.candidate)
     sa, sb = summarize(a["calls"]), summarize(b["calls"])
-    print(f"{'':16}{a['label']:>14}{b['label']:>14}{'delta':>10}")
-    print(f"{'git':16}{a['git']:>14}{b['git']:>14}")
+    print(f"{'':16}{a['label']:>18}{b['label']:>18}{'delta':>10}")
+    print(f"{'git':16}{a['git']:>18}{b['git']:>18}")
     for k in sa:
         va, vb = sa[k], sb[k]
         delta = round(vb - va, 3)
         better = (delta < 0) == (k in LOWER_IS_BETTER) and delta != 0
         mark = "" if k == "calls" else ("  better" if better else "  worse" if delta else "")
-        print(f"{k:16}{va:>14.3f}{vb:>14.3f}{delta:>+10.3f}{mark}")
+        print(f"{k:16}{va:>18.3f}{vb:>18.3f}{delta:>+10.3f}{mark}")
     for c in b["calls"]:
         for kind, ps in check(c["scenario"], c["events"]).items():
             for p in ps:

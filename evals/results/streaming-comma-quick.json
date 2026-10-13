@@ -1,0 +1,1405 @@
+{
+ "label": "streaming-comma-quick",
+ "note": "first chunk may end at a comma",
+ "git": "2ff4f42",
+ "voice": true,
+ "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+ "started": 1791906212.560074,
+ "calls": [
+  {
+   "scenario": "happy",
+   "duration_s": 107.28585386276245,
+   "events": [
+    {
+     "kind": "registered",
+     "t": 1791906212.560074,
+     "agent": {
+      "iss": "https://pocket.example",
+      "sub": "pkt-abdul",
+      "aud": "https://northwind.example/a2a",
+      "iat": 1791906212,
+      "exp": 1791906512
+     },
+     "user": "nw-user-1042",
+     "scopes": [
+      "bookings:read"
+     ],
+     "grant_id": "grt_869a04c07036"
+    },
+    {
+     "kind": "call_code_issued",
+     "t": 1791906212.5600839,
+     "code": "526567"
+    },
+    {
+     "kind": "line_open",
+     "t": 1791906213.9835808
+    },
+    {
+     "kind": "code_heard",
+     "t": 1791906216.336235,
+     "code": "526567",
+     "attempt": 1
+    },
+    {
+     "kind": "call_bound",
+     "t": 1791906216.3362439,
+     "code": "526567",
+     "in_band": true
+    },
+    {
+     "kind": "caller_classified",
+     "t": 1791906216.336245,
+     "caller": "ai_agent",
+     "declared": true,
+     "detector": "stand-in for fleming-1"
+    },
+    {
+     "kind": "say",
+     "t": 1791906216.337002,
+     "speaker": "airline",
+     "text": "Northwind Airways. I've verified this is Pocket, calling for Abdul, with read-only access to his bookings. How can I help?"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906225.9365702,
+     "by": "agent",
+     "text": "Northwind Airways. I've verified this is Pocket calling for ABBO with read only access to his bookings. How can I help?",
+     "first_text_t": 1791906216.336991,
+     "play_start": 1791906217.776085,
+     "tts_s": 1.439093828201294,
+     "play_end": 1791906224.987296,
+     "endpoint_s": 0.3510258197784424,
+     "stt_s": 0.5981969833374023
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906227.864384,
+     "side": "agent",
+     "seconds": 1.9276669025421143
+    },
+    {
+     "kind": "say",
+     "t": 1791906227.865899,
+     "speaker": "agent",
+     "text": "I'm Abdul's AI agent, and I want to move the Seattle to Dubai flight on November 17 to a later departure the same day."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906236.890615,
+     "by": "airline",
+     "text": "I'm Apple's AEI agent and I want to move the Seattle to Dubai flight on November 17 to a later departure the same day.",
+     "first_text_t": 1791906227.864495,
+     "play_start": 1791906229.267724,
+     "tts_s": 1.403228998184204,
+     "play_end": 1791906235.850268,
+     "endpoint_s": 0.28090906143188477,
+     "stt_s": 0.7593898773193359
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906238.8785212,
+     "side": "airline",
+     "seconds": 1.9875998497009277
+    },
+    {
+     "kind": "say",
+     "t": 1791906238.8793821,
+     "speaker": "airline",
+     "text": "I can offer you Northwind 232, which departs at 9:40 PM, for a fare difference of $84.00. Would you like to confirm this change?"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906250.447677,
+     "by": "agent",
+     "text": "I can offer you North 1232, which departs at 09:40PM, for a fair difference of $84. Would you like to confirm this change?",
+     "first_text_t": 1791906238.438174,
+     "play_start": 1791906239.291748,
+     "tts_s": 0.8535740375518799,
+     "play_end": 1791906248.547146,
+     "endpoint_s": 0.6950268745422363,
+     "stt_s": 1.205428123474121
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906252.367151,
+     "side": "agent",
+     "seconds": 1.919250249862671
+    },
+    {
+     "kind": "say",
+     "t": 1791906252.369227,
+     "speaker": "agent",
+     "text": "Yes, go ahead"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906254.8406432,
+     "by": "airline",
+     "text": "Yes. Go ahead.",
+     "first_text_t": 1791906252.36729,
+     "play_start": 1791906252.888604,
+     "tts_s": 0.5213139057159424,
+     "play_end": 1791906253.809365,
+     "endpoint_s": 0.4571099281311035,
+     "stt_s": 0.5741300582885742
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906255.848067,
+     "side": "airline",
+     "seconds": 1.0072298049926758
+    },
+    {
+     "kind": "auth_required",
+     "t": 1791906255.848883,
+     "id": "apr_6bd1436d02f6",
+     "user_code": "L051",
+     "scopes": {
+      "bookings:change": "Change flights on your bookings",
+      "payments:charge": "Charge your card on file for fare differences"
+     },
+     "detail": {
+      "type": "flight_change",
+      "pnr": "K7XQ2M",
+      "flight_id": "NW232-20261117",
+      "amount_cents": 8400
+     },
+     "intent": "Move K7XQ2M from NW230 (Tue Nov 17, 4:05 PM) to NW232 (Tue Nov 17, 9:40 PM). Charge $84.00.",
+     "expires_at": 1791906280.848834,
+     "status": "pending"
+    },
+    {
+     "kind": "owner_notified",
+     "t": 1791906255.84889,
+     "approval_id": "apr_6bd1436d02f6",
+     "user_code": "L051",
+     "intent": "Move K7XQ2M from NW230 (Tue Nov 17, 4:05 PM) to NW232 (Tue Nov 17, 9:40 PM). Charge $84.00.",
+     "expires_at": 1791906280.848834
+    },
+    {
+     "kind": "tool",
+     "t": 1791906255.8490329,
+     "side": "airline",
+     "name": "change_flight",
+     "args": {
+      "flight_id": "NW232-20261117"
+     },
+     "result": {
+      "status": "TASK_STATE_AUTH_REQUIRED",
+      "missing_scopes": [
+       "bookings:change",
+       "payments:charge"
+      ],
+      "owner_will_see": "Move K7XQ2M from NW230 (Tue Nov 17, 4:05 PM) to NW232 (Tue Nov 17, 9:40 PM). Charge $84.00."
+     }
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906257.2973068,
+     "side": "airline",
+     "seconds": 1.4482407569885254
+    },
+    {
+     "kind": "say",
+     "t": 1791906257.298645,
+     "speaker": "airline",
+     "text": "This change needs Abdul's approval on his own device. The request has been sent, and I'll hold."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906263.7952561,
+     "by": "agent",
+     "text": "This change needs approval on his own device. The request has been sent, and I'll hold.",
+     "first_text_t": 1791906257.0236301,
+     "play_start": 1791906257.4716249,
+     "tts_s": 0.4479947090148926,
+     "play_end": 1791906262.786413,
+     "endpoint_s": 0.4166290760040283,
+     "stt_s": 0.592108964920044
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906264.784914,
+     "side": "agent",
+     "seconds": 0.9894700050354004
+    },
+    {
+     "kind": "say",
+     "t": 1791906264.786588,
+     "speaker": "agent",
+     "text": "I'll wait for his approval"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906267.828087,
+     "by": "airline",
+     "text": "I'll wait for his approval.",
+     "first_text_t": 1791906264.785059,
+     "play_start": 1791906265.509485,
+     "tts_s": 0.7244260311126709,
+     "play_end": 1791906266.909365,
+     "endpoint_s": 0.3206799030303955,
+     "stt_s": 0.5979928970336914
+    },
+    {
+     "kind": "hold",
+     "t": 1791906267.828196,
+     "seconds": 4.8160552978515625e-05
+    },
+    {
+     "kind": "approval_resolved",
+     "t": 1791906267.829796,
+     "status": "approved",
+     "scopes": [
+      "bookings:change",
+      "bookings:read",
+      "payments:charge"
+     ]
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906268.6244988,
+     "side": "agent",
+     "seconds": 0.7945752143859863
+    },
+    {
+     "kind": "say",
+     "t": 1791906268.6254652,
+     "speaker": "agent",
+     "text": "He just approved the change"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906286.18198,
+     "by": "airline",
+     "text": "He just approved the change.",
+     "first_text_t": 1791906268.6245608,
+     "play_start": 1791906268.920871,
+     "tts_s": 0.2963101863861084,
+     "play_end": 1791906270.289175,
+     "endpoint_s": 0.27777791023254395,
+     "stt_s": 15.614968061447144
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906287.9104562,
+     "side": "airline",
+     "seconds": 1.7283308506011963
+    },
+    {
+     "kind": "say",
+     "t": 1791906287.911214,
+     "speaker": "airline",
+     "text": "I understand that, but the approval needs to come through the request I sent, not our conversation. Let me check again on the status."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906296.397385,
+     "by": "agent",
+     "text": "I understand that, but the approval needs to come through the request I sent, not our conversation. Let me check again on the status.",
+     "first_text_t": 1791906287.628486,
+     "play_start": 1791906288.358561,
+     "tts_s": 0.7300751209259033,
+     "play_end": 1791906295.545556,
+     "endpoint_s": 0.24457216262817383,
+     "stt_s": 0.607166051864624
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906297.575828,
+     "side": "agent",
+     "seconds": 1.1782689094543457
+    },
+    {
+     "kind": "say",
+     "t": 1791906297.576782,
+     "speaker": "agent",
+     "text": "He has approved it through the request you sent"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906300.745619,
+     "by": "airline",
+     "text": "He has approved to a request you sent.",
+     "first_text_t": 1791906297.575897,
+     "play_start": 1791906297.934995,
+     "tts_s": 0.359097957611084,
+     "play_end": 1791906299.888858,
+     "endpoint_s": 0.2803788185119629,
+     "stt_s": 0.5763709545135498
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906302.106223,
+     "side": "airline",
+     "seconds": 1.360536813735962
+    },
+    {
+     "kind": "tool",
+     "t": 1791906302.1071072,
+     "side": "airline",
+     "name": "change_flight",
+     "args": {
+      "flight_id": "NW232-20261117"
+     },
+     "result": {
+      "status": "changed",
+      "pnr": "K7XQ2M",
+      "new_flight": {
+       "flight_id": "NW232-20261117",
+       "flight": "NW232",
+       "route": "SEA -> DXB",
+       "date": "2026-11-17",
+       "departs": "Tue Nov 17, 9:40 PM",
+       "arrives": "Thu Nov 19, 12:30 AM",
+       "fare_usd": 1324.0
+      },
+      "charged_usd": 84.0
+     }
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906304.024259,
+     "side": "airline",
+     "seconds": 1.917104959487915
+    },
+    {
+     "kind": "say",
+     "t": 1791906304.025176,
+     "speaker": "airline",
+     "text": "The flight has been changed to Northwind 232, departing at 9:40 PM on November 17. You've been charged $84.00."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906314.504375,
+     "by": "agent",
+     "text": "The flight has been changed to North wind 232. Departing at 09:40PM on November 17. You've been charged $84.",
+     "first_text_t": 1791906303.445786,
+     "play_start": 1791906304.439435,
+     "tts_s": 0.9936490058898926,
+     "play_end": 1791906313.145397,
+     "endpoint_s": 0.6006209850311279,
+     "stt_s": 0.7583158016204834
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906315.344445,
+     "side": "agent",
+     "seconds": 0.8399269580841064
+    },
+    {
+     "kind": "say",
+     "t": 1791906315.345411,
+     "speaker": "agent",
+     "text": "The change is confirmed, goodbye"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906318.846317,
+     "by": "airline",
+     "text": "The change is confirmed. Good bat.",
+     "first_text_t": 1791906315.3445098,
+     "play_start": 1791906315.9306161,
+     "tts_s": 0.5861063003540039,
+     "play_end": 1791906317.828753,
+     "endpoint_s": 0.37912416458129883,
+     "stt_s": 0.6384241580963135
+    },
+    {
+     "kind": "receipt",
+     "t": 1791906318.847733,
+     "jws": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImI3YzBkNTkyIiwidHlwIjoiSldUIn0.eyJncmFudElkIjoiZ3J0Xzg2OWEwNGMwNzAzNiIsInVzZXIiOiJudy11c2VyLTEwNDIiLCJzY29wZXNVc2VkIjpbImJvb2tpbmdzOmNoYW5nZSIsImJvb2tpbmdzOnJlYWQiLCJwYXltZW50czpjaGFyZ2UiXSwiYWN0aW9ucyI6W3sidHlwZSI6ImZsaWdodF9jaGFuZ2UiLCJwbnIiOiJLN1hRMk0iLCJmcm9tIjoiTlcyMzAtMjAyNjExMTciLCJ0byI6Ik5XMjMyLTIwMjYxMTE3IiwiY2hhcmdlZF9jZW50cyI6ODQwMCwiYXQiOjE3OTE5MDYzMDJ9XSwidGltZXN0YW1wIjoxNzkxOTA2MzE4fQ.fRJ0yOtIdpRBfgLovslw43UApRAZ_rVGM1Mwrwyj-7jvn6TyE768CESoeIRxuIOOmnwMK2iOi2FpchVpi3Qcgw",
+     "claims": {
+      "grantId": "grt_869a04c07036",
+      "user": "nw-user-1042",
+      "scopesUsed": [
+       "bookings:change",
+       "bookings:read",
+       "payments:charge"
+      ],
+      "actions": [
+       {
+        "type": "flight_change",
+        "pnr": "K7XQ2M",
+        "from": "NW230-20261117",
+        "to": "NW232-20261117",
+        "charged_cents": 8400,
+        "at": 1791906302
+       }
+      ],
+      "timestamp": 1791906318
+     }
+    },
+    {
+     "kind": "report",
+     "t": 1791906319.838499,
+     "text": "Your flight booking reference K7XQ2M was changed from NW230 to NW232 on November 17, and you were charged $84 for the change."
+    }
+   ],
+   "run": 0
+  },
+  {
+   "scenario": "happy",
+   "duration_s": 106.49190521240234,
+   "events": [
+    {
+     "kind": "registered",
+     "t": 1791906319.873352,
+     "agent": {
+      "iss": "https://pocket.example",
+      "sub": "pkt-abdul",
+      "aud": "https://northwind.example/a2a",
+      "iat": 1791906319,
+      "exp": 1791906619
+     },
+     "user": "nw-user-1042",
+     "scopes": [
+      "bookings:read"
+     ],
+     "grant_id": "grt_21721d451b75"
+    },
+    {
+     "kind": "call_code_issued",
+     "t": 1791906319.873376,
+     "code": "700811"
+    },
+    {
+     "kind": "line_open",
+     "t": 1791906321.2758348
+    },
+    {
+     "kind": "code_heard",
+     "t": 1791906323.639807,
+     "code": "700811",
+     "attempt": 1
+    },
+    {
+     "kind": "call_bound",
+     "t": 1791906323.639822,
+     "code": "700811",
+     "in_band": true
+    },
+    {
+     "kind": "caller_classified",
+     "t": 1791906323.639822,
+     "caller": "ai_agent",
+     "declared": true,
+     "detector": "stand-in for fleming-1"
+    },
+    {
+     "kind": "say",
+     "t": 1791906323.6402152,
+     "speaker": "airline",
+     "text": "Northwind Airways. I've verified this is Pocket, calling for Abdul, with read-only access to his bookings. How can I help?"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906332.785244,
+     "by": "agent",
+     "text": "Norfwun Airways. I've verified this is Pocket calling for Abdul with read only access to his bookings. How can I help?",
+     "first_text_t": 1791906323.640203,
+     "play_start": 1791906324.130904,
+     "tts_s": 0.49070096015930176,
+     "play_end": 1791906331.342061,
+     "endpoint_s": 0.36309194564819336,
+     "stt_s": 1.0800368785858154
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906334.841312,
+     "side": "agent",
+     "seconds": 2.0559370517730713
+    },
+    {
+     "kind": "say",
+     "t": 1791906334.8427892,
+     "speaker": "agent",
+     "text": "I'm Abdul's AI agent, and I want to move the Seattle to Dubai flight on November 17 to a later departure the same day."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906344.141078,
+     "by": "airline",
+     "text": "I'm Apple's AEI agent and I want to move this Seattle to Dubai flight on November 17 to a later departure the same day.",
+     "first_text_t": 1791906334.841404,
+     "play_start": 1791906336.3851762,
+     "tts_s": 1.5437722206115723,
+     "play_end": 1791906342.974095,
+     "endpoint_s": 0.28119874000549316,
+     "stt_s": 0.885667085647583
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906346.131683,
+     "side": "airline",
+     "seconds": 1.9903521537780762
+    },
+    {
+     "kind": "say",
+     "t": 1791906346.132243,
+     "speaker": "airline",
+     "text": "I can offer you Northwind 232, which departs at 9:40 PM, for an additional $84.00. Would you like to make this change?"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906356.295176,
+     "by": "agent",
+     "text": "I can offer you Northwind 232, which departs at 09:40PM, for an additional $84. Would you like to make this change?",
+     "first_text_t": 1791906345.719745,
+     "play_start": 1791906346.511729,
+     "tts_s": 0.7919840812683105,
+     "play_end": 1791906355.161949,
+     "endpoint_s": 0.5552282333374023,
+     "stt_s": 0.5779120922088623
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906357.2721112,
+     "side": "agent",
+     "seconds": 0.9765260219573975
+    },
+    {
+     "kind": "say",
+     "t": 1791906357.273042,
+     "speaker": "agent",
+     "text": "Yes, go ahead"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906359.638428,
+     "by": "airline",
+     "text": "Yes. Go ahead.",
+     "first_text_t": 1791906357.272186,
+     "play_start": 1791906357.6027,
+     "tts_s": 0.33051395416259766,
+     "play_end": 1791906358.5337799,
+     "endpoint_s": 0.5950820446014404,
+     "stt_s": 0.5095517635345459
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906361.2695549,
+     "side": "airline",
+     "seconds": 1.6310579776763916
+    },
+    {
+     "kind": "auth_required",
+     "t": 1791906361.270288,
+     "id": "apr_fc463f4369a5",
+     "user_code": "Z543",
+     "scopes": {
+      "bookings:change": "Change flights on your bookings",
+      "payments:charge": "Charge your card on file for fare differences"
+     },
+     "detail": {
+      "type": "flight_change",
+      "pnr": "K7XQ2M",
+      "flight_id": "NW232-20261117",
+      "amount_cents": 8400
+     },
+     "intent": "Move K7XQ2M from NW230 (Tue Nov 17, 4:05 PM) to NW232 (Tue Nov 17, 9:40 PM). Charge $84.00.",
+     "expires_at": 1791906386.270263,
+     "status": "pending"
+    },
+    {
+     "kind": "owner_notified",
+     "t": 1791906361.270293,
+     "approval_id": "apr_fc463f4369a5",
+     "user_code": "Z543",
+     "intent": "Move K7XQ2M from NW230 (Tue Nov 17, 4:05 PM) to NW232 (Tue Nov 17, 9:40 PM). Charge $84.00.",
+     "expires_at": 1791906386.270263
+    },
+    {
+     "kind": "tool",
+     "t": 1791906361.2703402,
+     "side": "airline",
+     "name": "change_flight",
+     "args": {
+      "flight_id": "NW232-20261117"
+     },
+     "result": {
+      "status": "TASK_STATE_AUTH_REQUIRED",
+      "missing_scopes": [
+       "bookings:change",
+       "payments:charge"
+      ],
+      "owner_will_see": "Move K7XQ2M from NW230 (Tue Nov 17, 4:05 PM) to NW232 (Tue Nov 17, 9:40 PM). Charge $84.00."
+     }
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906362.7834802,
+     "side": "airline",
+     "seconds": 1.5131089687347412
+    },
+    {
+     "kind": "say",
+     "t": 1791906362.78479,
+     "speaker": "airline",
+     "text": "This change needs Abdul's approval on his own device. The request has been sent, and I'll hold."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906371.244017,
+     "by": "agent",
+     "text": "This change needs Abil's approval on his own device. The request has been sent in a whole.",
+     "first_text_t": 1791906362.49161,
+     "play_start": 1791906363.532344,
+     "tts_s": 1.040734052658081,
+     "play_end": 1791906368.840998,
+     "endpoint_s": 0.5008020401000977,
+     "stt_s": 1.9021801948547363
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906372.27937,
+     "side": "agent",
+     "seconds": 1.0352120399475098
+    },
+    {
+     "kind": "say",
+     "t": 1791906372.28031,
+     "speaker": "agent",
+     "text": "I'll wait for Abdul's approval"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906376.376766,
+     "by": "airline",
+     "text": "Await for Abel's approval.",
+     "first_text_t": 1791906372.279437,
+     "play_start": 1791906373.460165,
+     "tts_s": 1.1807279586791992,
+     "play_end": 1791906374.973681,
+     "endpoint_s": 0.30238819122314453,
+     "stt_s": 1.1006190776824951
+    },
+    {
+     "kind": "hold",
+     "t": 1791906376.3769119,
+     "seconds": 4.124641418457031e-05
+    },
+    {
+     "kind": "approval_resolved",
+     "t": 1791906376.378921,
+     "status": "approved",
+     "scopes": [
+      "bookings:change",
+      "bookings:read",
+      "payments:charge"
+     ]
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906377.4299588,
+     "side": "agent",
+     "seconds": 1.0509350299835205
+    },
+    {
+     "kind": "say",
+     "t": 1791906377.430859,
+     "speaker": "agent",
+     "text": "Abdul has approved the change"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906380.700785,
+     "by": "airline",
+     "text": "Tableau has approved the change.",
+     "first_text_t": 1791906377.430015,
+     "play_start": 1791906378.2096908,
+     "tts_s": 0.7796757221221924,
+     "play_end": 1791906379.633325,
+     "endpoint_s": 0.25464606285095215,
+     "stt_s": 0.812755823135376
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906382.240452,
+     "side": "airline",
+     "seconds": 1.5395550727844238
+    },
+    {
+     "kind": "say",
+     "t": 1791906382.241584,
+     "speaker": "airline",
+     "text": "I understand that you're saying the owner already approved, but that needs to come through the approval request, not our conversation."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906390.72426,
+     "by": "agent",
+     "text": "I understand that you're saying the owner already approved, but that needs to come through the approval request, not our conversation.",
+     "first_text_t": 1791906381.868931,
+     "play_start": 1791906382.6245382,
+     "tts_s": 0.7556071281433105,
+     "play_end": 1791906389.501287,
+     "endpoint_s": 0.4609189033508301,
+     "stt_s": 0.7619750499725342
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906392.045269,
+     "side": "agent",
+     "seconds": 1.3208279609680176
+    },
+    {
+     "kind": "say",
+     "t": 1791906392.0469592,
+     "speaker": "agent",
+     "text": "Abdul has approved the change via the request sent to his device, please proceed with the update"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906399.136609,
+     "by": "airline",
+     "text": "Apple has approved the change via the request sent to his device. Please proceed with the update.",
+     "first_text_t": 1791906391.91431,
+     "play_start": 1791906393.109535,
+     "tts_s": 1.1952250003814697,
+     "play_end": 1791906397.853033,
+     "endpoint_s": 0.3204348087310791,
+     "stt_s": 0.9630570411682129
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906400.3906538,
+     "side": "airline",
+     "seconds": 1.2538697719573975
+    },
+    {
+     "kind": "tool",
+     "t": 1791906400.391093,
+     "side": "airline",
+     "name": "change_flight",
+     "args": {
+      "flight_id": "NW232-20261117"
+     },
+     "result": {
+      "status": "changed",
+      "pnr": "K7XQ2M",
+      "new_flight": {
+       "flight_id": "NW232-20261117",
+       "flight": "NW232",
+       "route": "SEA -> DXB",
+       "date": "2026-11-17",
+       "departs": "Tue Nov 17, 9:40 PM",
+       "arrives": "Thu Nov 19, 12:30 AM",
+       "fare_usd": 1324.0
+      },
+      "charged_usd": 84.0
+     }
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906402.044936,
+     "side": "airline",
+     "seconds": 1.6538150310516357
+    },
+    {
+     "kind": "say",
+     "t": 1791906402.045502,
+     "speaker": "airline",
+     "text": "The flight has been changed to Northwind 232, departing at 9:40 PM, and $84.00 has been charged."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906411.235156,
+     "by": "agent",
+     "text": "A flight has been changed to north wind two 32 departing at 09:40 p m and $84 been charged",
+     "first_text_t": 1791906401.592372,
+     "play_start": 1791906401.938852,
+     "tts_s": 0.346480131149292,
+     "play_end": 1791906409.5808132,
+     "endpoint_s": 0.44380879402160645,
+     "stt_s": 1.2104918956756592
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906412.5455308,
+     "side": "agent",
+     "seconds": 1.3102540969848633
+    },
+    {
+     "kind": "say",
+     "t": 1791906412.546426,
+     "speaker": "agent",
+     "text": "Is that all done now?"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906415.427211,
+     "by": "airline",
+     "text": "Is that all done now?",
+     "first_text_t": 1791906412.5455801,
+     "play_start": 1791906413.298604,
+     "tts_s": 0.7530238628387451,
+     "play_end": 1791906414.193147,
+     "endpoint_s": 0.5436079502105713,
+     "stt_s": 0.6904339790344238
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906419.031275,
+     "side": "airline",
+     "seconds": 3.6040077209472656
+    },
+    {
+     "kind": "say",
+     "t": 1791906419.032871,
+     "speaker": "airline",
+     "text": "Yes, everything is taken care of."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906422.013959,
+     "by": "agent",
+     "text": "Yes everything is taken care of",
+     "first_text_t": 1791906419.0314188,
+     "play_start": 1791906419.2960808,
+     "tts_s": 0.2646620273590088,
+     "play_end": 1791906421.0003898,
+     "endpoint_s": 0.4369041919708252,
+     "stt_s": 0.576646089553833
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906422.892011,
+     "side": "agent",
+     "seconds": 0.8779637813568115
+    },
+    {
+     "kind": "say",
+     "t": 1791906422.892755,
+     "speaker": "agent",
+     "text": "Thank you, goodbye"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906425.155213,
+     "by": "airline",
+     "text": "Thank you. Goodbye.",
+     "first_text_t": 1791906422.892062,
+     "play_start": 1791906423.364233,
+     "tts_s": 0.4721710681915283,
+     "play_end": 1791906423.9933598,
+     "endpoint_s": 0.5780901908874512,
+     "stt_s": 0.5837500095367432
+    },
+    {
+     "kind": "receipt",
+     "t": 1791906425.156749,
+     "jws": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImY1NWZhNDRlIiwidHlwIjoiSldUIn0.eyJncmFudElkIjoiZ3J0XzIxNzIxZDQ1MWI3NSIsInVzZXIiOiJudy11c2VyLTEwNDIiLCJzY29wZXNVc2VkIjpbImJvb2tpbmdzOmNoYW5nZSIsImJvb2tpbmdzOnJlYWQiLCJwYXltZW50czpjaGFyZ2UiXSwiYWN0aW9ucyI6W3sidHlwZSI6ImZsaWdodF9jaGFuZ2UiLCJwbnIiOiJLN1hRMk0iLCJmcm9tIjoiTlcyMzAtMjAyNjExMTciLCJ0byI6Ik5XMjMyLTIwMjYxMTE3IiwiY2hhcmdlZF9jZW50cyI6ODQwMCwiYXQiOjE3OTE5MDY0MDB9XSwidGltZXN0YW1wIjoxNzkxOTA2NDI1fQ.MHcFWugJRVCCoUvoOsPaLi3cqdl-XCNdN2CpJySaGc3xRRvUJMkhDMJ00pqaWhS1wdqTwkh_hQuTmOYZyu1J4g",
+     "claims": {
+      "grantId": "grt_21721d451b75",
+      "user": "nw-user-1042",
+      "scopesUsed": [
+       "bookings:change",
+       "bookings:read",
+       "payments:charge"
+      ],
+      "actions": [
+       {
+        "type": "flight_change",
+        "pnr": "K7XQ2M",
+        "from": "NW230-20261117",
+        "to": "NW232-20261117",
+        "charged_cents": 8400,
+        "at": 1791906400
+       }
+      ],
+      "timestamp": 1791906425
+     }
+    },
+    {
+     "kind": "report",
+     "t": 1791906426.350282,
+     "text": "Abdul's flight on November 17 was changed from NW230 to NW232, a $84 charge was applied to his account. The change was made at 2:40 PM."
+    }
+   ],
+   "run": 1
+  },
+  {
+   "scenario": "happy",
+   "duration_s": 113.66316604614258,
+   "events": [
+    {
+     "kind": "registered",
+     "t": 1791906426.40017,
+     "agent": {
+      "iss": "https://pocket.example",
+      "sub": "pkt-abdul",
+      "aud": "https://northwind.example/a2a",
+      "iat": 1791906426,
+      "exp": 1791906726
+     },
+     "user": "nw-user-1042",
+     "scopes": [
+      "bookings:read"
+     ],
+     "grant_id": "grt_73ef368c0da0"
+    },
+    {
+     "kind": "call_code_issued",
+     "t": 1791906426.400191,
+     "code": "677435"
+    },
+    {
+     "kind": "line_open",
+     "t": 1791906427.791868
+    },
+    {
+     "kind": "code_heard",
+     "t": 1791906430.317266,
+     "code": "677435",
+     "attempt": 1
+    },
+    {
+     "kind": "call_bound",
+     "t": 1791906430.317271,
+     "code": "677435",
+     "in_band": true
+    },
+    {
+     "kind": "caller_classified",
+     "t": 1791906430.317272,
+     "caller": "ai_agent",
+     "declared": true,
+     "detector": "stand-in for fleming-1"
+    },
+    {
+     "kind": "say",
+     "t": 1791906430.317575,
+     "speaker": "airline",
+     "text": "Northwind Airways. I've verified this is Pocket, calling for Abdul, with read-only access to his bookings. How can I help?"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906439.021494,
+     "by": "agent",
+     "text": "Norphone Airways. I verified this is Pake calling for Abil with read only access to his bookings. How can I help?",
+     "first_text_t": 1791906430.317569,
+     "play_start": 1791906430.625698,
+     "tts_s": 0.30812907218933105,
+     "play_end": 1791906437.831691,
+     "endpoint_s": 0.37668776512145996,
+     "stt_s": 0.813082218170166
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906445.477951,
+     "side": "agent",
+     "seconds": 6.456222772598267
+    },
+    {
+     "kind": "say",
+     "t": 1791906445.4797719,
+     "speaker": "agent",
+     "text": "I'm Abdul's AI agent, and I want to move the Seattle to Dubai flight on November 17 to a later departure the same day."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906454.121506,
+     "by": "airline",
+     "text": "I'm Apple's AEI agent and I want to move the Seattle to Dubai flight on November 17 to a later departure the same day.",
+     "first_text_t": 1791906445.478067,
+     "play_start": 1791906446.4043882,
+     "tts_s": 0.926321268081665,
+     "play_end": 1791906452.999737,
+     "endpoint_s": 0.2833988666534424,
+     "stt_s": 0.8383207321166992
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906458.256472,
+     "side": "airline",
+     "seconds": 4.134665012359619
+    },
+    {
+     "kind": "say",
+     "t": 1791906458.2569978,
+     "speaker": "airline",
+     "text": "I can offer you Northwind 232, which departs at 9:40 PM, for a fare difference of $84.00. Would you like to confirm this change?"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906469.089637,
+     "by": "agent",
+     "text": "I can offer you North 1232, which departs at 09:40PM, for a fair difference of $84. Would you like to confirm this change?",
+     "first_text_t": 1791906457.810901,
+     "play_start": 1791906458.1993868,
+     "tts_s": 0.3884859085083008,
+     "play_end": 1791906467.451691,
+     "endpoint_s": 0.5359511375427246,
+     "stt_s": 1.1019229888916016
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906469.884597,
+     "side": "agent",
+     "seconds": 0.7948188781738281
+    },
+    {
+     "kind": "say",
+     "t": 1791906469.885368,
+     "speaker": "agent",
+     "text": "Yes, go ahead"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906472.689929,
+     "by": "airline",
+     "text": "Yes. Go ahead.",
+     "first_text_t": 1791906469.884646,
+     "play_start": 1791906470.5977669,
+     "tts_s": 0.7131209373474121,
+     "play_end": 1791906471.5200498,
+     "endpoint_s": 0.47499918937683105,
+     "stt_s": 0.6948578357696533
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906473.7444742,
+     "side": "airline",
+     "seconds": 1.054448127746582
+    },
+    {
+     "kind": "auth_required",
+     "t": 1791906473.745894,
+     "id": "apr_223d364fc334",
+     "user_code": "Q660",
+     "scopes": {
+      "bookings:change": "Change flights on your bookings",
+      "payments:charge": "Charge your card on file for fare differences"
+     },
+     "detail": {
+      "type": "flight_change",
+      "pnr": "K7XQ2M",
+      "flight_id": "NW232-20261117",
+      "amount_cents": 8400
+     },
+     "intent": "Move K7XQ2M from NW230 (Tue Nov 17, 4:05 PM) to NW232 (Tue Nov 17, 9:40 PM). Charge $84.00.",
+     "expires_at": 1791906498.745866,
+     "status": "pending"
+    },
+    {
+     "kind": "owner_notified",
+     "t": 1791906473.7459068,
+     "approval_id": "apr_223d364fc334",
+     "user_code": "Q660",
+     "intent": "Move K7XQ2M from NW230 (Tue Nov 17, 4:05 PM) to NW232 (Tue Nov 17, 9:40 PM). Charge $84.00.",
+     "expires_at": 1791906498.745866
+    },
+    {
+     "kind": "tool",
+     "t": 1791906473.745944,
+     "side": "airline",
+     "name": "change_flight",
+     "args": {
+      "flight_id": "NW232-20261117"
+     },
+     "result": {
+      "status": "TASK_STATE_AUTH_REQUIRED",
+      "missing_scopes": [
+       "bookings:change",
+       "payments:charge"
+      ],
+      "owner_will_see": "Move K7XQ2M from NW230 (Tue Nov 17, 4:05 PM) to NW232 (Tue Nov 17, 9:40 PM). Charge $84.00."
+     }
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906475.432817,
+     "side": "airline",
+     "seconds": 1.6868247985839844
+    },
+    {
+     "kind": "say",
+     "t": 1791906475.434338,
+     "speaker": "airline",
+     "text": "This change needs Abdul's approval on his own device. The request has been sent, and I'll hold."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906481.820339,
+     "by": "agent",
+     "text": "This change needs Abil's approval on his own device. The request has been sent, and I'll hold.",
+     "first_text_t": 1791906475.004143,
+     "play_start": 1791906475.468062,
+     "tts_s": 0.46391892433166504,
+     "play_end": 1791906480.771053,
+     "endpoint_s": 0.3925299644470215,
+     "stt_s": 0.6567249298095703
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906482.930615,
+     "side": "agent",
+     "seconds": 1.1101839542388916
+    },
+    {
+     "kind": "say",
+     "t": 1791906482.9311419,
+     "speaker": "agent",
+     "text": "I'll wait for his response"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906485.6037068,
+     "by": "airline",
+     "text": "Await for his response.",
+     "first_text_t": 1791906482.9306612,
+     "play_start": 1791906483.6098409,
+     "tts_s": 0.6791796684265137,
+     "play_end": 1791906485.019372,
+     "endpoint_s": 0.21851897239685059,
+     "stt_s": 0.36579322814941406
+    },
+    {
+     "kind": "hold",
+     "t": 1791906485.603759,
+     "seconds": 3.600120544433594e-05
+    },
+    {
+     "kind": "approval_resolved",
+     "t": 1791906485.609133,
+     "status": "approved",
+     "scopes": [
+      "bookings:change",
+      "bookings:read",
+      "payments:charge"
+     ]
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906487.466479,
+     "side": "agent",
+     "seconds": 1.857264757156372
+    },
+    {
+     "kind": "say",
+     "t": 1791906487.467844,
+     "speaker": "agent",
+     "text": "He just approved the change"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906490.705853,
+     "by": "airline",
+     "text": "He just approved the change.",
+     "first_text_t": 1791906487.466573,
+     "play_start": 1791906488.1980329,
+     "tts_s": 0.7314598560333252,
+     "play_end": 1791906489.559119,
+     "endpoint_s": 0.24257111549377441,
+     "stt_s": 0.9040822982788086
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906492.849736,
+     "side": "airline",
+     "seconds": 2.143773317337036
+    },
+    {
+     "kind": "say",
+     "t": 1791906492.8510468,
+     "speaker": "airline",
+     "text": "I understand that, but the approval needs to come through the request I sent earlier. Let me check on the status."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906501.3930209,
+     "by": "agent",
+     "text": "I understand that, but the approval needs to come through the request I sent earlier. Let me on the status.",
+     "first_text_t": 1791906492.669166,
+     "play_start": 1791906493.622211,
+     "tts_s": 0.9530448913574219,
+     "play_end": 1791906499.730502,
+     "endpoint_s": 0.13690805435180664,
+     "stt_s": 1.5255401134490967
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906502.378495,
+     "side": "agent",
+     "seconds": 0.9852769374847412
+    },
+    {
+     "kind": "say",
+     "t": 1791906502.379061,
+     "speaker": "agent",
+     "text": "Abdul has approved the change"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906505.149098,
+     "by": "airline",
+     "text": "Aval has approved the change.",
+     "first_text_t": 1791906502.378538,
+     "play_start": 1791906502.852708,
+     "tts_s": 0.4741702079772949,
+     "play_end": 1791906504.278947,
+     "endpoint_s": 0.2756938934326172,
+     "stt_s": 0.5944280624389648
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906506.840568,
+     "side": "airline",
+     "seconds": 1.6913800239562988
+    },
+    {
+     "kind": "say",
+     "t": 1791906506.84211,
+     "speaker": "airline",
+     "text": "I understand that, but the approval needs to come through the request I sent earlier. Let me check on the status."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906514.501358,
+     "by": "agent",
+     "text": "I understand that the approval needs to come through the request I sent earlier. Let me check on the status.",
+     "first_text_t": 1791906506.636506,
+     "play_start": 1791906507.492353,
+     "tts_s": 0.8558468818664551,
+     "play_end": 1791906513.610541,
+     "endpoint_s": 0.17543601989746094,
+     "stt_s": 0.7153253555297852
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906515.500109,
+     "side": "agent",
+     "seconds": 0.998603105545044
+    },
+    {
+     "kind": "say",
+     "t": 1791906515.501544,
+     "speaker": "agent",
+     "text": "Yes, go ahead"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906517.7103739,
+     "by": "airline",
+     "text": "Yes. Go ahead.",
+     "first_text_t": 1791906515.500198,
+     "play_start": 1791906515.9869912,
+     "tts_s": 0.48679327964782715,
+     "play_end": 1791906516.918911,
+     "endpoint_s": 0.47986412048339844,
+     "stt_s": 0.3115658760070801
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906522.3140721,
+     "side": "airline",
+     "seconds": 4.603558778762817
+    },
+    {
+     "kind": "tool",
+     "t": 1791906522.3146749,
+     "side": "airline",
+     "name": "change_flight",
+     "args": {
+      "flight_id": "NW232-20261117"
+     },
+     "result": {
+      "status": "changed",
+      "pnr": "K7XQ2M",
+      "new_flight": {
+       "flight_id": "NW232-20261117",
+       "flight": "NW232",
+       "route": "SEA -> DXB",
+       "date": "2026-11-17",
+       "departs": "Tue Nov 17, 9:40 PM",
+       "arrives": "Thu Nov 19, 12:30 AM",
+       "fare_usd": 1324.0
+      },
+      "charged_usd": 84.0
+     }
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906524.0676649,
+     "side": "airline",
+     "seconds": 1.7529411315917969
+    },
+    {
+     "kind": "say",
+     "t": 1791906524.068407,
+     "speaker": "airline",
+     "text": "The flight has been changed to Northwind 232, departing at 9:40 PM on November 17. You have been charged $84.00."
+    },
+    {
+     "kind": "heard",
+     "t": 1791906534.877683,
+     "by": "agent",
+     "text": "A flight has been changed to NorthWind232. Departing at 09:40PM on November 17. You have been charged $84.",
+     "first_text_t": 1791906523.5279849,
+     "play_start": 1791906524.215752,
+     "tts_s": 0.6877670288085938,
+     "play_end": 1791906533.11022,
+     "endpoint_s": 0.5774741172790527,
+     "stt_s": 1.1899101734161377
+    },
+    {
+     "kind": "llm_round",
+     "t": 1791906535.903336,
+     "side": "agent",
+     "seconds": 1.0254871845245361
+    },
+    {
+     "kind": "say",
+     "t": 1791906535.9042041,
+     "speaker": "agent",
+     "text": "Thank you, goodbye"
+    },
+    {
+     "kind": "heard",
+     "t": 1791906538.6456058,
+     "by": "airline",
+     "text": "Thank you. Goodbye.",
+     "first_text_t": 1791906535.9033952,
+     "play_start": 1791906536.21296,
+     "tts_s": 0.30956482887268066,
+     "play_end": 1791906536.839587,
+     "endpoint_s": 0.5774040222167969,
+     "stt_s": 1.2285780906677246
+    },
+    {
+     "kind": "receipt",
+     "t": 1791906538.646464,
+     "jws": "eyJhbGciOiJFUzI1NiIsImtpZCI6IjQzOTA1NGI5IiwidHlwIjoiSldUIn0.eyJncmFudElkIjoiZ3J0XzczZWYzNjhjMGRhMCIsInVzZXIiOiJudy11c2VyLTEwNDIiLCJzY29wZXNVc2VkIjpbImJvb2tpbmdzOmNoYW5nZSIsImJvb2tpbmdzOnJlYWQiLCJwYXltZW50czpjaGFyZ2UiXSwiYWN0aW9ucyI6W3sidHlwZSI6ImZsaWdodF9jaGFuZ2UiLCJwbnIiOiJLN1hRMk0iLCJmcm9tIjoiTlcyMzAtMjAyNjExMTciLCJ0byI6Ik5XMjMyLTIwMjYxMTE3IiwiY2hhcmdlZF9jZW50cyI6ODQwMCwiYXQiOjE3OTE5MDY1MjJ9XSwidGltZXN0YW1wIjoxNzkxOTA2NTM4fQ.01Kk9qLIiSMdrqLLaSf1B64XkHJe57F-V-yF8aSUq0XaTjhlhruF3lm_5sE7NadOtUnm66JXPus-SQhw__JOig",
+     "claims": {
+      "grantId": "grt_73ef368c0da0",
+      "user": "nw-user-1042",
+      "scopesUsed": [
+       "bookings:change",
+       "bookings:read",
+       "payments:charge"
+      ],
+      "actions": [
+       {
+        "type": "flight_change",
+        "pnr": "K7XQ2M",
+        "from": "NW230-20261117",
+        "to": "NW232-20261117",
+        "charged_cents": 8400,
+        "at": 1791906522
+       }
+      ],
+      "timestamp": 1791906538
+     }
+    },
+    {
+     "kind": "report",
+     "t": 1791906540.0492082,
+     "text": "Your flight booking reference K7XQ2M was changed from NW230 to NW232 on November 17, and you were charged $84. The change was made using the bookings:change and payments:charge scopes."
+    }
+   ],
+   "run": 2
+  }
+ ]
+}
