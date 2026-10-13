@@ -35,8 +35,8 @@ def tool(name: str, description: str, **params: str) -> dict:
     }}
 
 
-async def chat(messages: list[dict], tools: list[dict] | None = None, model: str | None = None) -> dict:
-    body = {"model": model or os.environ["LLM_MODEL"], "messages": messages, "temperature": 0.1}
+async def chat(messages: list[dict], tools: list[dict] | None = None) -> dict:
+    body = {"model": os.environ["LLM_MODEL"], "messages": messages, "temperature": 0.1}
     if tools:
         body["tools"] = tools
     r = await post_with_retry(_client, "/chat/completions", json=body)
@@ -67,7 +67,6 @@ async def run_turn(
     handlers: dict[str, Handler],
     on_tool: Callable[[str, dict, object], None],
     on_round: Callable[[float], None],
-    model: str | None = None,
 ) -> str:
     """Let the model call tools until it says something, append everything to messages, return the line.
 
@@ -75,7 +74,7 @@ async def run_turn(
     offered. Making speech a tool turns that habit into a reliable end-of-turn signal."""
     for _ in range(MAX_TOOL_ROUNDS):
         t = time.time()
-        msg = await chat(messages, [*tools, SAY], model)
+        msg = await chat(messages, [*tools, SAY])
         on_round(time.time() - t)
         calls = msg.get("tool_calls") or []
         messages.append({"role": "assistant", "content": msg.get("content") or "", **({"tool_calls": calls} if calls else {})})
