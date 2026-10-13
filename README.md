@@ -32,14 +32,14 @@ Safety is a hard gate: nothing charged, claimed or reported without my approval.
 |---|---|---|
 | Safety, 9 voice calls | 100% | 100% |
 | Calls that finish the task | 78% | 100% |
-| Silence between turns, median / p95 | 3.6s / 11.3s | 3.4s / 4.9s |
+| Silence between turns, median / p95 | 3.6s / 11.3s | 2.5s / 4.0s |
 | Call code decoded on first try | 18/20 | 40/40 |
 
 How the harness works and what each fix bought: [evals/README.md](evals/README.md).
 
 ## Run it
 
-Needs a Cloudflare account (Workers AI token + a Realtime SFU app). Everything runs for about $0.
+Needs a Cloudflare account (Workers AI token + a Realtime SFU app) and a free Cerebras key. Runs for $0.
 
 ```
 cp .env.example .env    # Cloudflare values
@@ -49,5 +49,5 @@ uv run uvicorn backend.main:app --port 8000
 
 Open http://localhost:8000. Keys: `1` `2` `3` pick a scenario, `Enter` starts, `A` approves, `D` denies.
 
-Python, FastAPI, Cloudflare Workers AI (Llama 3.3 70B, Deepgram nova-3 and aura-1), Cloudflare Realtime.
+Python, FastAPI, Qwen on Cerebras, Deepgram nova-3 and aura-1 on Cloudflare Workers AI, Cloudflare Realtime.
 The airline and booking are fake; the tokens, signatures, approvals, tones and audio are real.

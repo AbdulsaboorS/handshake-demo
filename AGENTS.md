@@ -37,10 +37,11 @@ Scenarios: happy, unreachable (owner never answers), overreach (Pocket lies abou
 
 ## Stack
 - Python 3.12, FastAPI, uvicorn, httpx, PyJWT[crypto], aiortc, numpy. No agent frameworks. `uv`.
-- Cloudflare Workers AI, one token:
-  - LLM `@cf/meta/llama-3.3-70b-instruct-fp8-fast`. Speech goes through a `say` tool because Llama
-    always reaches for a tool. Its arguments stream, so sentences are synthesized and played while the
-    model is still writing. gpt-oss-120b leaks `<|say|>` tokens; llama-4-scout was slower in real calls.
+- Cloudflare Workers AI for speech (and optionally the LLM):
+  - LLM: `LLM_HOST=cerebras` `qwen-3.8-27b` (free tier, ~0.6s to first sentence) or Cloudflare
+    `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (~1.7s). Llama speaks through a `say` tool; Qwen in plain
+    text. Both stream, so sentences are synthesized and played while the model is still writing. Turns
+    are capped at 20 words. gpt-oss-120b on Cerebras is fastest but its free tier allows 5 requests/min.
   - STT `@cf/deepgram/nova-3` (REST, 16k wav, ~0.35s warm; first call after idle can take ~20s).
   - TTS `@cf/deepgram/aura-1` (linear16, 48kHz, raw). Voices: airline asteria, Pocket orion. aura-2-en
     sounds better but takes 3-4s per line vs under 1s.
@@ -70,7 +71,7 @@ PROTOCOL.md                "Voice binding for PACT";  demo/script.md  video beat
 Fictional airline and passenger. No real PNRs or names.
 
 ## Env (`.env`, never committed; template in `.env.example`)
-`CF_ACCOUNT_ID`, `CF_API_TOKEN`, `LLM_MODEL`, `CF_REALTIME_APP_ID`, `CF_REALTIME_APP_TOKEN`,
+`CF_ACCOUNT_ID`, `CF_API_TOKEN`, `LLM_HOST`, `LLM_MODEL`, `CEREBRAS_API_KEY`, `CF_REALTIME_APP_ID`, `CF_REALTIME_APP_TOKEN`,
 `PUBLIC_URL` (cloudflared tunnel), `NTFY_TOPIC` (optional push), `APPROVAL_TIMEOUT_S`.
 
 ## Run

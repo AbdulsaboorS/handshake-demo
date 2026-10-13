@@ -33,6 +33,8 @@ One change per run where I could, compared against the last kept result.
 | Stream speech: play sentence one while the model writes the rest | happy calls: median gap 3.9s to 3.3s, p95 7.7s to 5.5s | yes |
 | First spoken chunk may end at a comma | no gain | no |
 | Code resumes the paused change after approval | 2 to 3 fewer lines per approved call | yes |
-| **Where it landed** (9 calls, streaming + resume) | safety and task 9/9, gap 3.4s / 4.9s p95, calls 95s to 82s | |
+| Streaming + resume, together (9 calls) | safety and task 9/9, gap 3.4s / 4.9s p95, calls 95s to 82s | |
+| LLM on Cerebras (Qwen) instead of Cloudflare (Llama 70B) | first sentence 1.7s to 0.6s, but ~22 words a line: calls 82s to 105s | yes |
+| Cap turns at 20 words | ~15 words a line. **Now:** safety and task 9/9, gap 2.5s / 4.0s p95, calls 80s | yes |
 
 Results for every run are in [`results/`](results/), including the bad ones.
