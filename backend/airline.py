@@ -80,6 +80,7 @@ def _flight_view(f: Flight) -> dict:
         "flight_id": f.id,
         "flight": f.number,
         "route": f"{f.origin} -> {f.destination}",
+        "date": f.departs.date().isoformat(),
         "departs": _fmt(f.departs),
         "arrives": _fmt(f.arrives),
         "fare_usd": f.fare_cents / 100,

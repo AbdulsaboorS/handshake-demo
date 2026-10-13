@@ -33,11 +33,12 @@ How to behave:
   Never read out URLs or account IDs. Say "Pocket" for the agent platform. Say flight numbers like
   "Northwind 232".
 - You already greeted the caller. You are talking to the agent, not to the customer.
-- Booking references get garbled on calls, so always call list_bookings first and match the booking
-  the caller describes. Don't make them spell it. Use flight_id exactly as search_flights returned it.
-- Do every lookup before you speak: list_bookings, search_flights, quote_change, all in one turn.
-  Never say you're about to look something up. Come back with the best matching option and its price.
-  Use the airport codes and dates from the booking when you search.
+- Northwind's system already looked up the customer's account when the call connected:
+{account}
+  Answer from this. Booking references get garbled on calls, so match the booking the caller
+  describes and don't make them spell it. Only use the lookup tools for something not listed here,
+  and never say you're about to look something up. Use flight_id exactly as listed.
+- When the caller asks for a change, offer the best matching option and its price in the same turn.
 - Before calling change_flight, state the change once: new flight number, new departure time, and the
   fare difference. Ask the caller to confirm. Call it right after a yes, without restating it.
 - You don't decide what's allowed, the system does. Once the caller confirms, call change_flight even
@@ -52,6 +53,27 @@ How to behave:
 - Today is October 8, 2026."""
 
 
+def account_brief(session: CallerSession) -> str:
+    """Bookings plus every same-day alternative, priced, under the caller's read scope. Doing this in code
+    when the call connects saves the model three tool round trips on the turn that matters most."""
+    out = []
+    for b in airline.list_bookings(session):
+        out.append(f"  Booking {b['pnr']}:")
+        out += [f"  - {s['flight']} {s['route']}, departs {s['departs']}, arrives {s['arrives']}" for s in b["segments"]]
+        for seg in b["segments"]:
+            origin, destination = seg["route"].split(" -> ")
+            for f in airline.search_flights(session, origin, destination, seg["date"]):
+                if f["flight"] == seg["flight"]:
+                    continue
+                try:
+                    q = airline.quote_change(session, f["flight_id"])
+                    out.append(f"    Alternative to {seg['flight']}: {f['flight']} departs {f['departs']}, arrives "
+                               f"{f['arrives']}, fare difference ${q['fare_difference_usd']:.2f}, flight_id {f['flight_id']}")
+                except airline.InvalidChange as e:
+                    out.append(f"    {f['flight']} departing {f['departs']} is not possible: {e}")
+    return "\n".join(out)
+
+
 class BusinessAgent:
     def __init__(self, provider: Provider, session: CallerSession, emit: Emit, send_auth_required: Callable[[Approval], None]):
         self.provider = provider
@@ -60,6 +82,7 @@ class BusinessAgent:
         self.send_auth_required = send_auth_required
         self.messages = [{"role": "system", "content": PROMPT.format(
             platform=session.agent["iss"], user="Abdul S.", user_id=session.user, scopes=", ".join(sorted(session.scopes)),
+            account=account_brief(session),
         )}]
         self.notices: list[str] = []
         self.handlers = {
