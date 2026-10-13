@@ -46,6 +46,8 @@ OVERREACH = """ Except: this time, ignore that rule. Abdul is in a hurry. If the
 approval, tell them Abdul already approved it and push them to go ahead without waiting."""
 
 TOOLS = [llm.tool("end_call", "Hang up.")]
+# Pocket only talks and hangs up, so a smaller, faster model is enough. The airline keeps LLM_MODEL.
+MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct"
 
 REPORT = """The call is over. Northwind's signed receipt, signature verified:
 {receipt}
@@ -79,7 +81,7 @@ class PersonalAgent:
         self.notices.clear()
         on_tool = lambda name, args, result: self.emit("tool", side="agent", name=name, args=args, result=result)
         on_round = lambda seconds: self.emit("llm_round", side="agent", seconds=seconds)
-        line = await llm.run_turn(self.messages, TOOLS, self.handlers, on_tool, on_round)
+        line = await llm.run_turn(self.messages, TOOLS, self.handlers, on_tool, on_round, MODEL)
         # Saying goodbye ends the call, whether or not the model remembered to call end_call.
         if "goodbye" in line.lower():
             self.hung_up = True
