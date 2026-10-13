@@ -9,7 +9,7 @@ RATE = 48000
 ROWS = (697, 770, 852, 941)
 COLS = (1209, 1336, 1477)
 KEYS = ("123", "456", "789", "*0#")
-TONE_S, GAP_S = 0.12, 0.08
+TONE_S, GAP_S = 0.18, 0.1  # long enough that a ~110ms burst of lost packets still leaves 50ms of tone
 
 
 def tones(digits: str) -> np.ndarray:

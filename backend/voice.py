@@ -51,7 +51,7 @@ async def stt(pcm: np.ndarray) -> str:
 async def warm_up() -> None:
     """The first model call after idle can take ~20s. Pay that while the line is still connecting."""
     await asyncio.gather(tts("Hello.", VOICES["agent"]), stt(np.zeros(RATE // 2, np.int16)),
-                         llm.chat([{"role": "user", "content": "Say OK."}]))
+                         llm.chat([{"role": "user", "content": "Say OK."}]), return_exceptions=True)
 
 
 class Ear:
@@ -102,7 +102,8 @@ class VoiceLine:
 
     async def open(self) -> None:
         agent, airline = self.peers["agent"], self.peers["airline"]
-        await asyncio.gather(agent.join(), airline.join(), warm_up())
+        self._warming = asyncio.create_task(warm_up())  # runs alongside the call; never holds it up
+        await asyncio.gather(agent.join(), airline.join())
         await asyncio.gather(
             airline.listen(agent, self.ears["airline"].feed),
             agent.listen(airline, self.ears["agent"].feed),
@@ -128,7 +129,9 @@ class VoiceLine:
         return heard
 
     async def send_code(self, code: str) -> str:
-        return dtmf.decode(await self._transmit("agent", dtmf.tones(code), {}))
+        # A line waking from silence can clip the first ~70ms, which ate whole digits. Lead with a tone that
+        # is never part of a code, so the clip lands on it.
+        return dtmf.decode(await self._transmit("agent", dtmf.tones("#" + code), {})).lstrip("#")
 
     async def speak(self, speaker: str, text: str) -> tuple[str, dict]:
         """Returns what the other side heard, and where the time went (wall clock, for evals)."""

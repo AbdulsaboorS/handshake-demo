@@ -46,6 +46,11 @@ The agent dials and sends the call code as DTMF keypad tones as soon as the call
 business decodes the tones, redeems the code, and from then on treats the caller as that verified
 session.
 
+Tones are 180ms with 100ms gaps, led by a `#` that's never part of a code. Real lines drop bursts of
+packets, and with 120ms tones a single burst ate a whole digit about 1 send in 10. If the code doesn't
+redeem, the business asks for it once more. A wrong guess doesn't use up the real code, and two failed
+attempts leave the call unbound.
+
 Why DTMF: it's the one machine-readable channel every voice path already carries. PSTN, SIP trunks,
 IVRs and WebRTC all pass it. It needs nothing from carriers, and a human caller never sends it by
 accident.

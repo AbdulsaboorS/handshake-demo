@@ -11,7 +11,7 @@ from collections.abc import Callable
 
 from backend import airline
 from backend.business_agent import BusinessAgent
-from backend.pact import Approval, Provider, Signer, mint_agent_token, verify_receipt
+from backend.pact import Approval, InvalidToken, Provider, Signer, mint_agent_token, verify_receipt
 from backend.personal_agent import PersonalAgent
 
 AUD = "https://northwind.example/a2a"
@@ -95,9 +95,15 @@ class Call:
                 await asyncio.wait_for(self.listener_ready.wait(), 8)
             except TimeoutError:
                 pass
-        heard_code = await self.line.send_code(code)
-        emit("code_heard", code=heard_code)
-        session = self.provider.redeem_call_code(heard_code)
+        for attempt in (1, 2):  # a burst of packet loss can eat a digit, so the business asks once more
+            heard_code = await self.line.send_code(code)
+            emit("code_heard", code=heard_code, attempt=attempt)
+            try:
+                session = self.provider.redeem_call_code(heard_code)
+                break
+            except InvalidToken:
+                if attempt == 2:
+                    raise
         emit("call_bound", code=heard_code, in_band=self.voice)
         emit("caller_classified", caller="ai_agent", declared=True, detector="stand-in for fleming-1")
 
