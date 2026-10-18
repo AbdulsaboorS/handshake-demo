@@ -1,6 +1,6 @@
 # Demo video
 
-Target: 75 to 90 seconds after the cut. Raw voice calls run 80 seconds, so the edit trims the waits.
+Target: 75 to 90 seconds after the cut. Raw voice calls average about 89 seconds, so the edit trims the waits.
 
 ## Recording setup
 
