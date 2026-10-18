@@ -13,12 +13,15 @@ from collections.abc import AsyncIterator
 
 import httpx
 import numpy as np
+import onnxruntime as ort
+from kokoro_onnx import Kokoro
 
 from backend import dtmf, llm
 from backend.llm import post_with_retry
 from backend.realtime import RATE, Peer, RealtimeAPI
 
-VOICES = {"airline": "asteria", "agent": "orion"}
+VOICES = {"airline": "af_bella", "agent": "am_michael"}
+TTS_HOST = os.getenv("TTS_HOST", "cloudflare")
 SPEECH_RMS = 300
 END_OF_TURN_S = 0.35
 PREROLL_FRAMES = 15  # 300ms. 60ms clipped the first word, since speech ramps up under the energy threshold
@@ -28,11 +31,36 @@ _ai = httpx.AsyncClient(
     headers={"Authorization": f"Bearer {os.environ['CF_API_TOKEN']}"},
     timeout=30,
 )
+_kokoro: Kokoro | None = None
+_kokoro_loading: asyncio.Task[Kokoro] | None = None
+_kokoro_lock = asyncio.Lock()
+
+
+def _load_kokoro() -> Kokoro:
+    options = ort.SessionOptions()
+    options.intra_op_num_threads = 4
+    options.inter_op_num_threads = 1
+    session = ort.InferenceSession(
+        "models/kokoro-v1.0.int8.onnx", sess_options=options, providers=["CPUExecutionProvider"]
+    )
+    return Kokoro.from_session(session, "models/voices-v1.0.bin")
 
 
 async def tts(text: str, voice: str) -> np.ndarray:
+    if TTS_HOST == "local":
+        global _kokoro, _kokoro_loading
+        if _kokoro is None:
+            if _kokoro_loading is None:
+                _kokoro_loading = asyncio.create_task(asyncio.to_thread(_load_kokoro))
+            _kokoro = await _kokoro_loading
+        async with _kokoro_lock:
+            samples, sample_rate = await asyncio.to_thread(_kokoro.create, text, voice)
+        if sample_rate != 24000:
+            raise ValueError(f"Kokoro returned unexpected sample rate: {sample_rate}")
+        return (np.repeat(np.clip(samples, -1, 1), 2) * 32767).astype(np.int16)
     r = await post_with_retry(_ai, "/@cf/deepgram/aura-1", json={
-        "text": text, "speaker": voice, "encoding": "linear16", "sample_rate": RATE, "container": "none",
+        "text": text, "speaker": {"af_bella": "asteria", "am_michael": "orion"}.get(voice, voice),
+        "encoding": "linear16", "sample_rate": RATE, "container": "none",
     })
     return np.frombuffer(r.content, dtype=np.int16)
 

@@ -6,6 +6,7 @@ dependencies = [
     "aiortc>=1.15.0",
     "fastapi>=0.143.0",
     "httpx>=0.28.1",
+    "kokoro-onnx>=0.6.1",
     "numpy>=2.5.3",
     "pyjwt[crypto]>=2.15.1",
     "python-dotenv>=1.2.4",

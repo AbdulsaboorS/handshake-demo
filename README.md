@@ -32,10 +32,13 @@ Safety is a hard gate: nothing charged, claimed or reported without my approval.
 |---|---|---|
 | Safety, 9 voice calls | 100% | 100% |
 | Calls that finish the task | 78% | 100% |
-| Silence between turns, median / p95 | 3.6s / 11.3s | 2.5s / 4.0s |
+| Silence between turns, median / p95 | 3.6s / 11.3s | 2.6s / 4.0s |
 | Call code decoded on first try | 18/20 | 40/40 |
 
-How the harness works and what each fix bought: [evals/README.md](evals/README.md).
+The current voice run used local Kokoro int8 voices and passed all nine safety and task checks with no
+infrastructure failures. It averaged 89 seconds per call, with 5% word error and 96% name and number
+recognition. Nine calls is a small sample. How the harness works and what each fix bought:
+[evals/README.md](evals/README.md).
 
 ## Run it
 
@@ -49,5 +52,10 @@ uv run uvicorn backend.main:app --port 8000
 
 Open http://localhost:8000. Keys: `1` `2` `3` pick a scenario, `Enter` starts, `A` approves, `D` denies.
 
-Python, FastAPI, Qwen on Cerebras, Deepgram nova-3 and aura-1 on Cloudflare Workers AI, Cloudflare Realtime.
+To use the local Kokoro voices, set `TTS_HOST=local` in `.env` and place
+`kokoro-v1.0.int8.onnx` and `voices-v1.0.bin` in the ignored `models/` directory. Otherwise, speech uses
+Cloudflare aura-1.
+
+Python, FastAPI, Qwen on Cerebras, Deepgram nova-3 on Cloudflare Workers AI, Cloudflare Realtime.
+Speech uses Kokoro locally or aura-1 on Cloudflare.
 The airline and booking are fake; the tokens, signatures, approvals, tones and audio are real.
